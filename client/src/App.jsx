@@ -1,31 +1,14 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
-import { useState, useEffect } from 'react';
+import Tester from './pages/Tester';
 
 function App() {
-    const [testData, setTestData] = useState(null);
-
-    useEffect(() => {
-        fetch('/api/test-data')
-            .then((res) => res.json())
-            .then((data) => setTestData(data))
-            .catch((err) => console.error(err));
-    }, []);
-
-    const sendCommand = (command) => {
-        fetch('/api/control', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ command }),
-        }).then((res) => console.log(res.status));
-    };
-
     return (
-        <div>
-            <h1>ESP32 Dashboard</h1>
-            <pre>{JSON.stringify(testData, null, 2)}</pre>
-            <button onClick={() => sendCommand('ON')}>Turn ON</button>
-            <button onClick={() => sendCommand('OFF')}>Turn OFF</button>
-        </div>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<Tester />} />
+            </Routes>
+        </BrowserRouter>
     );
 }
 
