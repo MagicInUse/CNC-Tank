@@ -11,15 +11,15 @@ const MovementControls = () => {
         </div>
         {/* Directional Controls */}
         <div className="grid grid-cols-3 gap-2">
-          <button></button>
+          <button>▼</button>
           <button>▲</button>
-          <button></button>
+          <button>▼</button>
           <button>◀</button>
           <button>■</button>
           <button>▶</button>
-          <button></button>
+          <button>▲</button>
           <button>▼</button>
-          <button></button>
+          <button>▲</button>
         </div>
       </div>
   );

@@ -20,8 +20,8 @@ function Tester() {
 
     return (
         <div>
-            <h1>ESP32 Dashboard</h1>
-            <pre>{JSON.stringify(testData, null, 2)}</pre>
+            <h3>ESP32 Tests</h3>
+            <pre style={{ textAlign: 'left' }}>{JSON.stringify(testData, null, 2)}</pre>
             <button onClick={() => sendCommand('ON')}>Turn ON</button>
             <button onClick={() => sendCommand('OFF')}>Turn OFF</button>
         </div>
