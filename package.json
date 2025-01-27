@@ -8,7 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "client": "cd client && npm run dev",
-    "server": "cd server && npm run dev"
+    "server": "cd server && npm run dev",
+    "packages": "npm i && cd client && npm i && cd ../server && npm i"
   },
   "keywords": [],
   "author": "",
