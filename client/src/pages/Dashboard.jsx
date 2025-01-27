@@ -10,7 +10,6 @@ const Dashboard = () => {
             <ConfigMenu />
             <LocationCoordinates />
             <MovementControls />
-            <Tester />
         </>
     );
 };
