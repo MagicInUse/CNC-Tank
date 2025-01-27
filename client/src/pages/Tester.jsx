@@ -19,11 +19,13 @@ function Tester() {
     };
 
     return (
-        <div>
-            <h1>ESP32 Dashboard</h1>
-            <pre>{JSON.stringify(testData, null, 2)}</pre>
-            <button onClick={() => sendCommand('ON')}>Turn ON</button>
-            <button onClick={() => sendCommand('OFF')}>Turn OFF</button>
+        <div className="w-screen px-4 flex items-center justify-center min-h-screen">
+            <div className="w-full max-w-md text-center">
+                <h3>ESP32 Tests</h3>
+                <pre className="text-left">{JSON.stringify(testData, null, 2)}</pre>
+                <button className="m-1" type="button" onClick={() => sendCommand('ON')}>Turn ON</button>
+                <button className="m-1" type="button" onClick={() => sendCommand('OFF')}>Turn OFF</button>
+            </div>
         </div>
     );
 }
