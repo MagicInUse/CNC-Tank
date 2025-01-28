@@ -1,9 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StopSVG, HomingSVG, HomedSVG, ArrowUpSVG, WifiSVG, NoWifiSVG } from '../assets/SVGs';
 
 const MovementControls = () => {
   const [movementState, setMovementState] = useState('');
   const [zState, setZState] = useState('');
+  const [selectedSpeed, setSelectedSpeed] = useState(100);
+  const [selectedStep, setSelectedStep] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [showStepMenu, setShowStepMenu] = useState(false);
+  
+  const speedMenuRef = useRef(null);
+  const stepMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (speedMenuRef.current && !speedMenuRef.current.contains(event.target)) {
+        setShowSpeedMenu(false);
+      }
+      if (stepMenuRef.current && !stepMenuRef.current.contains(event.target)) {
+        setShowStepMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSpeedSelect = (speed) => {
+    setSelectedSpeed(speed);
+    setShowSpeedMenu(false);
+  };
+
+  const handleStepSelect = (step) => {
+    setSelectedStep(step);
+    setShowStepMenu(false);
+  };
 
   const getMovementCenterButtonSVG = () => {
     switch (movementState) {
@@ -48,22 +79,71 @@ const MovementControls = () => {
     <div className="absolute bottom-4 right-4 p-2 pr-4 flex flex-row items-center border border-gray-400 bg-black bg-opacity-75 rounded-2xl">
       <div className="flex flex-col space-y-5">
         {/* Speed Controls */}
-        <div>
-          <span className="text-white m-1">Speed</span>
-          {[5, 10, 50, 100, 1000, 2000].map((speed) => (
-            <button key={speed} type="button" className="m-1 p-2 rounded-lg bg-gray-700 text-white">
-              {speed}
-            </button>
-          ))}
+        <div className="relative" ref={speedMenuRef}>
+          <button
+            onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+            className="w-28 h-12 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600"
+          >
+            Speed: {selectedSpeed}
+            {showSpeedMenu && (
+              <div className="absolute top-1/2 left-1/2 w-48 h-48">
+                {[5, 10, 50, 100, 1000, 2000].map((speed, index) => {
+                  const angle = (index * 360) / 6;
+                  const radius = 80;
+                  const left = radius * Math.cos((angle * Math.PI) / 180);
+                  const top = radius * Math.sin((angle * Math.PI) / 180);
+                  
+                  return (
+                    <button
+                      key={speed}
+                      onClick={() => handleSpeedSelect(speed)}
+                      className="absolute w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-gray-600 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 z-50"
+                      style={{
+                        left: `${left}px`,
+                        top: `${top}px`,
+                      }}
+                    >
+                      {speed}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </button>
         </div>
+
         {/* Steps Controls */}
-        <div>
-          <span className="text-white m-1">Steps</span>
-          {[0.01, 0.1, 1, 5, 10, 50, 100].map((step) => (
-            <button key={step} type="button" className="m-1 p-2 rounded-lg bg-gray-700 text-white">
-              {step}
-            </button>
-          ))}
+        <div className="relative" ref={stepMenuRef}>
+          <button
+            onClick={() => setShowStepMenu(!showStepMenu)}
+            className="w-28 h-12 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600"
+          >
+            Steps: {selectedStep}
+            {showStepMenu && (
+              <div className="absolute top-1/2 left-1/2 w-48 h-48">
+                {[0.01, 0.1, 1, 5, 10, 50, 100].map((step, index) => {
+                  const angle = (index * 360) / 7;
+                  const radius = 80;
+                  const left = radius * Math.cos((angle * Math.PI) / 180);
+                  const top = radius * Math.sin((angle * Math.PI) / 180);
+                  
+                  return (
+                    <button
+                      key={step}
+                      onClick={() => handleStepSelect(step)}
+                      className="absolute w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-gray-600 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 z-50"
+                      style={{
+                        left: `${left}px`,
+                        top: `${top}px`,
+                      }}
+                    >
+                      {step}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </button>
         </div>
       </div>
       {/* Z Controls */}
