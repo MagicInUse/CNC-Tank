@@ -90,7 +90,7 @@ const MovementControls = () => {
 
   return (
     <div className="absolute bottom-10 right-10 p-2 pr-4 flex flex-row items-center border border-gray-400 bg-black bg-opacity-75 rounded-2xl">
-      <div className="flex flex-col space-y-5">
+      <div className="flex flex-col mb-11 space-y-5 ml-2 mr-2">
         {/* Speed Controls */}
         <div className="relative" ref={speedMenuRef}>
           <button
@@ -100,31 +100,39 @@ const MovementControls = () => {
             Speed: {selectedSpeed}
             {showSpeedMenu && (
               <div className="absolute top-1/2 left-1/2 w-48 h-48">
-                {[5, 10, 50, 100, 1000, 2000].map((speed, index) => {
-                  const angle = (index * 360) / 6;
-                  const radius = 80;
-                  const left = radius * Math.cos((angle * Math.PI) / 180);
-                  const top = radius * Math.sin((angle * Math.PI) / 180);
-                  
-                  return (
-                    <button
-                      key={speed}
-                      onClick={() => handleSpeedSelect(speed)}
-                      className="absolute w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-gray-600 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 z-50"
-                      style={{
-                        left: `${left}px`,
-                        top: `${top}px`,
-                      }}
-                    >
-                      {speed}
-                    </button>
-                  );
-                })}
+                <div className="absolute w-72 h-72 bg-black border border-gray-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 z-10" />
+                  <button
+                    onClick={() => setShowSpeedMenu(false)}
+                    className="absolute w-20 h-14 rounded-full bg-gray-700 flex items-center justify-center text-white hover:bg-gray-600 transform -translate-x-1/2 -translate-y-1/2 z-50"
+                  >
+                    Close
+                  </button>
+                  <div className="absolute w-48 h-48">
+                    {[5, 10, 50, 100, 1000, 2000].map((speed, index) => {
+                      const angle = (index * -360) / 6;
+                      const radius = 100;
+                      const left = radius * Math.cos((angle * Math.PI) / 180);
+                      const top = radius * Math.sin((angle * Math.PI) / 180);
+                      
+                      return (
+                        <button
+                          key={speed}
+                          onClick={() => handleSpeedSelect(speed)}
+                          className="absolute w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-gray-600 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 z-50"
+                          style={{
+                            left: `${left}px`,
+                            top: `${top}px`,
+                          }}
+                        >
+                          {speed}
+                        </button>
+                      );
+                    })}
+                  </div>
               </div>
             )}
           </button>
         </div>
-
         {/* Steps Controls */}
         <div className="relative" ref={stepMenuRef}>
           <button
@@ -134,9 +142,16 @@ const MovementControls = () => {
             Steps: {selectedStep}
             {showStepMenu && (
               <div className="absolute top-1/2 left-1/2 w-48 h-48">
+                <div className="absolute w-72 h-72 bg-black border border-gray-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 z-10" />
+                  <button
+                    onClick={() => setShowSpeedMenu(false)}
+                    className="absolute w-20 h-14 rounded-full bg-gray-700 flex items-center justify-center text-white hover:bg-gray-600 transform -translate-x-1/2 -translate-y-1/2 z-50"
+                  >
+                    Close
+                  </button>
                 {[0.01, 0.1, 1, 5, 10, 50, 100].map((step, index) => {
-                  const angle = (index * 360) / 7;
-                  const radius = 80;
+                  const angle = (index * -360) / 7;
+                  const radius = 100;
                   const left = radius * Math.cos((angle * Math.PI) / 180);
                   const top = radius * Math.sin((angle * Math.PI) / 180);
                   
