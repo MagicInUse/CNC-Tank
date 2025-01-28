@@ -13,6 +13,7 @@ const MovementControls = () => {
   const stepMenuRef = useRef(null);
 
   useEffect(() => {
+    
     const handleClickOutside = (event) => {
       if (speedMenuRef.current && !speedMenuRef.current.contains(event.target)) {
         setShowSpeedMenu(false);
@@ -25,6 +26,18 @@ const MovementControls = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (showSpeedMenu || showStepMenu) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [showSpeedMenu, showStepMenu]);
 
   const handleSpeedSelect = (speed) => {
     setSelectedSpeed(speed);
@@ -76,7 +89,7 @@ const MovementControls = () => {
   // TODO: set machine state based on API response
 
   return (
-    <div className="absolute bottom-4 right-4 p-2 pr-4 flex flex-row items-center border border-gray-400 bg-black bg-opacity-75 rounded-2xl">
+    <div className="absolute bottom-10 right-10 p-2 pr-4 flex flex-row items-center border border-gray-400 bg-black bg-opacity-75 rounded-2xl">
       <div className="flex flex-col space-y-5">
         {/* Speed Controls */}
         <div className="relative" ref={speedMenuRef}>
