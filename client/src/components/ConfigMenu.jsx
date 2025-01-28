@@ -5,30 +5,32 @@ const ConfigMenu = () => {
     return (
         <>
             {showConfig ? (
-                <div className="absolute top-4 right-4 border rounded-lg shadow-lg p-4 z-50">
+                <div className="absolute top-10 right-10 border border-gray-400 rounded-lg shadow-lg p-4 z-50">
                     <h3 className="text-lg font-semibold mb-2">Configuration</h3>
                     <div className="space-y-2">
                         <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" className="form-checkbox h-4 w-4 text-blue-600" />
+                            <input type="checkbox" className="form-checkbox h-4 w-4" />
                             <span className="ml-2">Option 1</span>
                         </label>
                         <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" className="form-checkbox h-4 w-4 text-blue-600" />
+                            <input type="checkbox" className="form-checkbox h-4 w-4" />
                             <span className="ml-2">Option 2</span>
                         </label>
                         <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" className="form-checkbox h-4 w-4 text-blue-600" />
+                            <input type="checkbox" className="form-checkbox h-4 w-4" />
                             <span className="ml-2">Option 3</span>
                         </label>
                     </div>
-                    <button type="button" onClick={() => setShowConfig(false)} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                    <button type="button" onClick={() => setShowConfig(false)} className="mt-4 px-4 py-2 transition-colors">
                         Close
                     </button>
                 </div>
             ) : (
-                <button type="button" className="absolute top-4 right-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors" onClick={() => setShowConfig(!showConfig)}>
-                    Config
-                </button>
+                <div className="absolute top-10 right-10 border border-gray-400 rounded-lg shadow-lg z-50">
+                    <button type="button" className="px-4 py-2 transition-colors" onClick={() => setShowConfig(!showConfig)}>
+                        Config
+                    </button>
+                </div>
             )}
         </>
     );

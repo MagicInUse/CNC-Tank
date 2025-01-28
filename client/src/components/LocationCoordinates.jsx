@@ -19,7 +19,7 @@ const LocationCoordinates = () => {
     }, []);
 
     return (
-        <div className="flex-block flex-column w-36 absolute bottom-4 left-4 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4 space-y-1 text-left">
+        <div className="flex-block flex-column w-36 absolute bottom-10 left-10 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4 space-y-1 text-left">
             {/* Position Display */}
             <p>X: <span className="float-right">{coordinates.x}</span></p>
             <p>Y: <span className="float-right">{coordinates.y}</span></p>
