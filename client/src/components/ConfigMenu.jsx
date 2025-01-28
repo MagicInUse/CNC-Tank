@@ -5,7 +5,7 @@ const ConfigMenu = () => {
     return (
         <>
             {showConfig ? (
-                <div className="absolute top-10 right-10 border border-gray-400 rounded-lg shadow-lg p-4 z-50">
+                <div className="absolute top-10 right-10 p-4 border border-gray-400 rounded-lg shadow-lg z-50">
                     <h3 className="text-lg font-semibold mb-2">Configuration</h3>
                     <div className="space-y-2">
                         <label className="flex items-center cursor-pointer">
