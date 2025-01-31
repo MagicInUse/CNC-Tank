@@ -1,0 +1,164 @@
+.compare-button {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1rem 2rem;
+    background: #2a2a2a;
+    color: rgba(255, 255, 255, 0.87);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.modal-container {
+    background: #1a1a1a;
+    width: 95%;
+    max-width: 1400px;
+    height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s forwards;
+}
+
+.modal-content {
+    padding: 2.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.column-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    flex: 1;
+    min-height: 0;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.content-area {
+    flex: 1;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: #2a2a2a;
+    color: rgba(255, 255, 255, 0.87);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.dropzone {
+    position: relative;
+    flex: 1;
+    border: 3px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: #2a2a2a;
+    color: rgba(255, 255, 255, 0.87);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.recompzone {
+    position: relative;
+    flex: 1;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: #2a2a2a;
+    color: rgba(255, 255, 255, 0.87);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.dropzone.dragging {
+    border-color: #2cc51e;
+}
+
+.dropzone p {
+    margin: 0;
+    padding: 10px;
+    text-align: center;
+}
+
+.dropzone input[type="file"] {
+    display: none;
+}
+
+.dropzone label {
+    color: rgba(255, 255, 255, 0.87);
+    transition: all 0.3s ease;
+}
+
+.dropzone label:hover {
+    border-color: #2cc51e;
+    background-color: #333333;
+}
+
+.content-line {
+    font-family: 'Courier New', monospace;
+    white-space: pre;
+    padding: 2px 8px;
+    color: rgba(255, 255, 255, 0.87);
+    line-height: 1.4;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.content-line:hover {
+    background-color: rgba(44, 197, 30, 0.1);
+}
+
+.content-line:active {
+    background-color: rgba(44, 197, 30, 0.2);
+}
+
+.file-content {
+    padding: 8px 0;
+    font-size: 14px;
+    background: #2a2a2a;
+    border-radius: 8px;
+}
+
+.close-button {
+    margin-top: 2rem;
+    padding: 1rem 2rem;
+    background: #2a2a2a;
+    color: rgba(255, 255, 255, 0.87);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
