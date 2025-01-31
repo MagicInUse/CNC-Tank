@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { FixedSizeList } from 'react-window';
 import '../assets/filecompare.css';
 
@@ -11,7 +11,7 @@ const ObjectsInfo = () => {
 
     const extractObjectsInfo = (content) => {
         try {
-            // Look for objects_info in G-code comments (;)
+            // Look for objects_info in G-code
             const lines = content.split('\n');
             for (const line of lines) {
                 if (line.includes('objects_info')) {
@@ -62,7 +62,7 @@ const ObjectsInfo = () => {
         const file = e.target.files[0];
         if (file) {
             setIsLoading(true);
-            if (file.name.endsWith('.py')) {
+            if (file.name.endsWith('.gcode' || file.name.endsWith('.bgcode'))) {
                 try {
                     const content = await readFileContent(file);
                     setObjectsInfo(content);
@@ -73,7 +73,7 @@ const ObjectsInfo = () => {
                 }
             } else {
                 setIsValidFile(false);
-                alert('Please select a .py file');
+                alert('Please select a .gcode or .bgcode file');
             }
             setIsLoading(false);
         }
@@ -81,8 +81,32 @@ const ObjectsInfo = () => {
 
     const ContentDisplay = () => {
         if (!objectsInfo) return null;
-        
-        const lines = objectsInfo.split('\n');
+    
+        const processContent = (content) => {
+            try {
+                const parsed = JSON.parse(content);
+                let allLines = [];
+                
+                parsed.objects.forEach(obj => {
+                    allLines.push(`{`);
+                    allLines.push(`  "name": "${obj.name}",`);
+                    allLines.push(`  "polygon": [`);
+                    obj.polygon.forEach((coord, index) => {
+                        const line = `    [${coord[0]}, ${coord[1]}]`;
+                        allLines.push(line);
+                    });
+                    allLines.push(`  ]`);
+                    allLines.push(`}`);
+                });
+                
+                return allLines;
+            } catch (error) {
+                console.error('Error processing content:', error);
+                return ['Error processing file content'];
+            }
+        };
+    
+        const lines = processContent(objectsInfo);
         const containerRef = useRef(null);
         const [containerHeight, setContainerHeight] = useState(0);
     
@@ -91,25 +115,39 @@ const ObjectsInfo = () => {
                 setContainerHeight(containerRef.current.clientHeight);
             }
         }, []);
-
-        const Row = ({ index, style }) => (
-            <div style={style} className="content-line">
-                {lines[index]}
-            </div>
-        );
+    
+        const Row = ({ index, style }) => {
+            const lineContent = lines[index];
+            
+            const handleClick = () => {
+                navigator.clipboard.writeText(lineContent);
+            };
+        
+            return (
+                <div
+                    className="content-line"
+                    onClick={handleClick}
+                    onKeyDown={(e) => e.key === 'Enter' && handleClick()}
+                    role="button"
+                    tabIndex={0}
+                    style={style}
+                >
+                    {lineContent}
+                </div>
+            );
+        };
     
         return (
-            <pre ref={containerRef} style={{ height: '100%', width: '100%' }}>
+            <div ref={containerRef} style={{ height: '100%', width: '100%' }}>
                 <FixedSizeList
                     height={containerHeight || 400}
                     width="100%"
                     itemCount={lines.length}
-                    itemSize={20}
-                    className="file-content"
+                    itemSize={24}
                 >
                     {Row}
                 </FixedSizeList>
-            </pre>
+            </div>
         );
     };
 

@@ -117,38 +117,29 @@
     background-color: #333333;
 }
 
-.file-content {
-    position: absolute !important;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: auto !important;
-    height: 100% !important;
-    border-radius: 5px;
-}
-
 .content-line {
-    padding: 0 8px;
-    font-family: monospace;
+    font-family: 'Courier New', monospace;
     white-space: pre;
+    padding: 2px 8px;
     color: rgba(255, 255, 255, 0.87);
+    line-height: 1.4;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.content-line:hover {
+    background-color: rgba(44, 197, 30, 0.1);
+}
+
+.content-line:active {
+    background-color: rgba(44, 197, 30, 0.2);
 }
 
 .file-content {
-    flex: 1;
-    font-family: monospace;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.87);
+    padding: 8px 0;
+    font-size: 14px;
     background: #2a2a2a;
-}
-
-.content-line {
-    font-family: monospace;
-    white-space: pre;
-    padding: 0 8px;
-    color: rgba(255, 255, 255, 0.87);
-    line-height: 20px;
+    border-radius: 8px;
 }
 
 .close-button {
