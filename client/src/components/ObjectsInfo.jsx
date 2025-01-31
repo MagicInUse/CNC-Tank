@@ -2,68 +2,37 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { FixedSizeList } from 'react-window';
 import '../assets/filecompare.css';
 
-const FileCompare = () => {
+const ObjectsInfo = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
-    const [fileContent, setFileContent] = useState('');
+    const [objectsInfo, setObjectsInfo] = useState(null);
     const [isValidFile, setIsValidFile] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Split content into lines for virtualization
-    const contentLines = useMemo(() => {
-        return fileContent.split('\n');
-    }, [fileContent]);
-
-    // Render each line in the virtualized list
-    const Row = ({ index, style }) => (
-        <div style={style} className="content-line">
-            {contentLines[index]}
-        </div>
-    );
+    const extractObjectsInfo = (content) => {
+        try {
+            // Look for objects_info in G-code comments (;)
+            const lines = content.split('\n');
+            for (const line of lines) {
+                if (line.includes('objects_info')) {
+                    const jsonStr = line.substring(line.indexOf('{'));
+                    return JSON.parse(jsonStr);
+                }
+            }
+            throw new Error('objects_info not found in G-code');
+        } catch (error) {
+            console.error('Error parsing objects_info:', error);
+            throw error;
+        }
+    };
 
     const readFileContent = async (file) => {
         try {
-            const buffer = await file.arrayBuffer();
-            
-            // Try multiple encodings in order
-            const encodings = ['utf-8', 'ascii', 'windows-1252', 'iso-8859-1'];
-            let cleanestContent = '';
-            let leastInvalidChars = Infinity;
-    
-            for (const encoding of encodings) {
-                const decoder = new TextDecoder(encoding);
-                let content = decoder.decode(buffer);
-                
-                // Count invalid characters
-                const invalidChars = (content.match(/[^\x20-\x7E\n\r]/g) || []).length;
-                
-                if (invalidChars < leastInvalidChars) {
-                    leastInvalidChars = invalidChars;
-                    cleanestContent = content;
-                    
-                    // If we found a clean decode, stop trying
-                    if (invalidChars === 0) break;
-                }
-            }
-    
-            // GCODE specific cleaning
-            cleanestContent = cleanestContent
-                .replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '') // Remove control chars
-                .replace(/[^\x20-\x7E\n\r]/g, '') // Keep only printable ASCII
-                .replace(/\r\n/g, '\n') // Normalize line endings
-                .replace(/\r/g, '\n')
-                .replace(/\n\n+/g, '\n') // Remove multiple blank lines
-                .trim();
-    
-            // Debug logging
-            console.log('File encoding detection complete');
-            console.log('Invalid characters remaining:', 
-                (cleanestContent.match(/[^\x20-\x7E\n\r]/g) || []).length);
-    
-            return cleanestContent;
+            const text = await file.text();
+            const extracted = extractObjectsInfo(text);
+            return JSON.stringify(extracted, null, 2);
         } catch (error) {
-            console.error('Error decoding file:', error);
-            throw new Error('Failed to read file content');
+            throw new Error('Failed to extract objects_info');
         }
     };
 
@@ -71,16 +40,16 @@ const FileCompare = () => {
         e.preventDefault();
         setIsDragging(false);
         setIsLoading(true);
-
+    
         const file = e.dataTransfer.files[0];
         if (file.name.endsWith('.gcode') || file.name.endsWith('.bgcode')) {
             try {
                 const content = await readFileContent(file);
-                setFileContent(content);
+                setObjectsInfo(content);
                 setIsValidFile(true);
             } catch (error) {
-                console.error('Error reading file:', error);
-                alert('Error reading file');
+                alert('Error: Could not find or parse objects_info');
+                setIsValidFile(false);
             }
         } else {
             setIsValidFile(false);
@@ -93,24 +62,27 @@ const FileCompare = () => {
         const file = e.target.files[0];
         if (file) {
             setIsLoading(true);
-            if (file.name.endsWith('.gcode') || file.name.endsWith('.bgcode')) {
+            if (file.name.endsWith('.py')) {
                 try {
                     const content = await readFileContent(file);
-                    setFileContent(content);
+                    setObjectsInfo(content);
                     setIsValidFile(true);
                 } catch (error) {
-                    console.error('Error reading file:', error);
-                    alert('Error reading file');
+                    alert('Error: Could not find or parse objects_info');
+                    setIsValidFile(false);
                 }
             } else {
                 setIsValidFile(false);
-                alert('Please select a .gcode or .bgcode file');
+                alert('Please select a .py file');
             }
             setIsLoading(false);
         }
     };
 
     const ContentDisplay = () => {
+        if (!objectsInfo) return null;
+        
+        const lines = objectsInfo.split('\n');
         const containerRef = useRef(null);
         const [containerHeight, setContainerHeight] = useState(0);
     
@@ -119,13 +91,19 @@ const FileCompare = () => {
                 setContainerHeight(containerRef.current.clientHeight);
             }
         }, []);
+
+        const Row = ({ index, style }) => (
+            <div style={style} className="content-line">
+                {lines[index]}
+            </div>
+        );
     
         return (
             <pre ref={containerRef} style={{ height: '100%', width: '100%' }}>
                 <FixedSizeList
                     height={containerHeight || 400}
                     width="100%"
-                    itemCount={contentLines.length}
+                    itemCount={lines.length}
                     itemSize={20}
                     className="file-content"
                 >
@@ -138,7 +116,7 @@ const FileCompare = () => {
     return (
         <>
             <button className="compare-button" onClick={() => setIsOpen(true)}>
-                Compare Files
+                View G-code Objects
             </button>
 
             {isOpen && (
@@ -147,7 +125,7 @@ const FileCompare = () => {
                         <div className="modal-content">
                             <div className="column-container">
                                 <div className="column">
-                                    <h2 className="text-center">Input .gcode</h2>
+                                    <h2 className="text-center">G-code File</h2>
                                     <div 
                                         className={`dropzone flex flex-col items-center justify-center ${isDragging ? 'dragging' : ''}`}
                                         onDragOver={(e) => {
@@ -159,13 +137,13 @@ const FileCompare = () => {
                                     >
                                         {isLoading ? (
                                             <p>Loading...</p>
-                                        ) : fileContent ? (
+                                        ) : objectsInfo ? (
                                             <ContentDisplay />
                                         ) : (
                                             <div className="text-center">
                                                 <p>Drag and drop .gcode or .bgcode file here</p>
                                                 <p>or</p>
-                                                <label className="cursor-pointer  px-4 py-2 bg-[#2a2a2a] border border-[rgba(255,255,255,0.1)] rounded-lg hover:border-[#2cc51e] hover:bg-[#333333] transition-colors">
+                                                <label className="cursor-pointer px-4 py-2 bg-[#2a2a2a] border border-[rgba(255,255,255,0.1)] rounded-lg hover:border-[#2cc51e] hover:bg-[#333333] transition-colors">
                                                     Choose File
                                                     <input
                                                         type="file"
@@ -179,12 +157,12 @@ const FileCompare = () => {
                                     </div>
                                 </div>
                                 <div className="column">
-                                    <h2 className="text-center">Recompiled .gcode</h2>
+                                    <h2 className="text-center">Extracted Objects Info</h2>
                                     <div className="recompzone flex flex-col items-center justify-center">
                                         {isValidFile ? (
                                             <ContentDisplay />
                                         ) : (
-                                            <p className="text-center">Waiting for input file...</p>
+                                            <p className="text-center">Waiting for G-code file...</p>
                                         )}
                                     </div>
                                 </div>
@@ -203,4 +181,4 @@ const FileCompare = () => {
     );
 };
 
-export default FileCompare;
+export default ObjectsInfo;
