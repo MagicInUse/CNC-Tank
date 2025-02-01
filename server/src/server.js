@@ -17,16 +17,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Endpoint to get data from ESP32
-app.get('/api/test-data', async (req, res) => {
-    try {
-        const response = await axios.get(`${BASE_URL}/api/test-data`);
-        res.json(response.data);
-    } catch (error) {
-        res.status(500).send('Error connecting to ESP32');
-    }
-});
-
 // Endpoint to send commands to ESP32
 app.post('/api/control', async (req, res) => {
     const { command } = req.body;
