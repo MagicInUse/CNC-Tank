@@ -73,9 +73,16 @@ const MovementControls = () => {
     }
   };
 
-  const handleZCommand = async (command) => {
+  const handleZCommand = async (direction) => {
     try {
-      const response = await fetch('/api/control', {
+      const command = {
+        axis: 'z',
+        direction: direction.toLowerCase(),
+        speed: selectedSpeed,
+        step: selectedStep
+      };
+  
+      const response = await fetch('http://localhost:3001/api/control', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -84,10 +91,11 @@ const MovementControls = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      console.log(`Z-axis ${command} command sent`);
+      const data = await response.json();
+      console.log('Command response:', data);
     } catch (error) {
       console.error('Error sending command:', error);
     }
@@ -136,6 +144,7 @@ const MovementControls = () => {
                       
                       return (
                         <button
+                          type="button"
                           key={speed}
                           onClick={() => handleSpeedSelect(speed)}
                           className="absolute w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-gray-600 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 z-50"
@@ -160,11 +169,12 @@ const MovementControls = () => {
             className="w-28 h-12 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600"
           >
             Steps: {selectedStep}
+          </button>
             {showStepMenu && (
               <div className="absolute top-1/2 left-1/2 w-48 h-48">
                 <div className="absolute w-72 h-72 bg-black border border-gray-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 z-10" />
                   <button
-                    onClick={() => setShowSpeedMenu(false)}
+                    onClick={() => setShowStepMenu(false)}
                     className="absolute w-20 h-14 rounded-full bg-gray-700 flex items-center justify-center text-white hover:bg-gray-600 transform -translate-x-1/2 -translate-y-1/2 z-50"
                   >
                     Close
@@ -177,6 +187,7 @@ const MovementControls = () => {
                   
                   return (
                     <button
+                      type="button"
                       key={step}
                       onClick={() => handleStepSelect(step)}
                       className="absolute w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-gray-600 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 z-50"
@@ -191,7 +202,6 @@ const MovementControls = () => {
                 })}
               </div>
             )}
-          </button>
         </div>
       </div>
       {/* Z Controls */}
@@ -199,7 +209,7 @@ const MovementControls = () => {
       <button 
         type="button" 
         className="w-12 h-14 p-2 rounded-lg flex items-center justify-center"
-        onClick={() => handleZCommand('ON')}
+        onClick={() => handleZCommand('UP')}
       >
         <ArrowUpSVG className="w-full h-full" />
       </button>
@@ -209,7 +219,7 @@ const MovementControls = () => {
       <button 
         type="button" 
         className="w-12 h-14 p-2 mt-1 rounded-lg flex items-center justify-center"
-        onClick={() => handleZCommand('OFF')}
+        onClick={() => handleZCommand('DOWN')}
       >
         <ArrowUpSVG className="w-full h-full rotate-180" />
       </button>

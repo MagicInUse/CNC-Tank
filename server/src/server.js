@@ -1,11 +1,20 @@
 import express from 'express';
 import axios from 'axios';
+import cors from 'cors';
 
 const app = express();
 
 const BASE_URL = 'http://192.168.68.117';
 const PORT = 3001;
 
+// CORS configuration
+const corsOptions = {
+    origin: 'http://localhost:5173', // Vite default port
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+  };
+  
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Endpoint to get data from ESP32
@@ -21,11 +30,17 @@ app.get('/api/test-data', async (req, res) => {
 // Endpoint to send commands to ESP32
 app.post('/api/control', async (req, res) => {
     const { command } = req.body;
+
+    if (!command || !command.axis || !command.direction || !command.speed || !command.step) {
+        return res.status(400).json({ error: 'Missing required command parameters' });
+    }
+
     try {
-        await axios.post(`${BASE_URL}/api/control`, { command });
-        res.send('Command sent');
+        const response = await axios.post(`${BASE_URL}/api/control`, { command });
+        res.json(response.data);
     } catch (error) {
-        res.status(500).send('Error connecting to ESP32');
+        const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
+        res.status(500).json({ error: errorMessage });
     }
 });
 

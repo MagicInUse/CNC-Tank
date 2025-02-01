@@ -160,7 +160,7 @@ const ObjectsInfo = () => {
     return (
         <>
             {!isOpen && (
-                <button className="compare-button" onClick={() => setIsOpen(true)}>
+                <button type="button" className="compare-button" onClick={() => setIsOpen(true)}>
                     View G-code Objects
                 </button>
             )}
@@ -234,6 +234,7 @@ const ObjectsInfo = () => {
                                     </div>
                                 </div>
                                 <button 
+                                    type="button"
                                     className="close-button w-1/2 mx-auto mb-0"
                                     onClick={handleClose}
                                     style={{ pointerEvents: 'auto' }} // Keep button interactive
