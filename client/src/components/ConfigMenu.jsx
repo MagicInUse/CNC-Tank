@@ -65,9 +65,11 @@ const ConfigMenu = () => {
                             <span className="ml-2">Vacuum</span>
                         </label>
                     </div>
-                    <button type="button" onClick={() => setShowConfig(false)} className="mt-4 px-4 py-2 transition-colors">
-                        Close
-                    </button>
+                    <div className="flex justify-center">
+                        <button type="button" onClick={() => setShowConfig(false)} className="mt-4 px-4 py-2 transition-colors">
+                            Close
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <div className="absolute top-10 right-10 border border-gray-400 rounded-lg shadow-lg z-50">
