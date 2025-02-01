@@ -73,9 +73,16 @@ const MovementControls = () => {
     }
   };
 
-  const handleZCommand = async (command) => {
+  const handleZCommand = async (direction) => {
     try {
-      const response = await fetch('/api/control', {
+      const command = {
+        axis: 'z',
+        direction: direction.toLowerCase(),
+        speed: selectedSpeed,
+        step: selectedStep
+      };
+  
+      const response = await fetch('http://localhost:3001/api/control', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -84,10 +91,11 @@ const MovementControls = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      console.log(`Z-axis ${command} command sent`);
+      const data = await response.json();
+      console.log('Command response:', data);
     } catch (error) {
       console.error('Error sending command:', error);
     }
@@ -201,7 +209,7 @@ const MovementControls = () => {
       <button 
         type="button" 
         className="w-12 h-14 p-2 rounded-lg flex items-center justify-center"
-        onClick={() => handleZCommand('ON')}
+        onClick={() => handleZCommand('UP')}
       >
         <ArrowUpSVG className="w-full h-full" />
       </button>
@@ -211,7 +219,7 @@ const MovementControls = () => {
       <button 
         type="button" 
         className="w-12 h-14 p-2 mt-1 rounded-lg flex items-center justify-center"
-        onClick={() => handleZCommand('OFF')}
+        onClick={() => handleZCommand('DOWN')}
       >
         <ArrowUpSVG className="w-full h-full rotate-180" />
       </button>

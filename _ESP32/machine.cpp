@@ -28,25 +28,32 @@ void handleTestControl() {
         return;
     }
     
-    if (!doc.containsKey("command")) {
-        server.send(400, "application/json", "{\"error\": \"Missing command parameter\"}");
+    if (!doc["command"].containsKey("axis") || 
+        !doc["command"].containsKey("direction") ||
+        !doc["command"].containsKey("speed") ||
+        !doc["command"].containsKey("step")) {
+        server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
         return;
     }
     
-    String command = doc["command"];
-    Serial.println("Received command: " + command);
+    String axis = doc["command"]["axis"];
+    String direction = doc["command"]["direction"];
+    int speed = doc["command"]["speed"];
+    float step = doc["command"]["step"];
     
-    if (command == "ON" || command == "OFF") {
-        StaticJsonDocument<200> response;
-        response["status"] = "success";
-        response["command"] = command;
-        
-        String responseStr;
-        serializeJson(response, responseStr);
-        server.send(200, "application/json", responseStr);
-    } else {
-        server.send(400, "application/json", "{\"error\": \"Invalid command value\"}");
-    }
+    Serial.println("Received command:");
+    Serial.println("Axis: " + axis);
+    Serial.println("Direction: " + direction);
+    Serial.println("Speed: " + String(speed));
+    Serial.println("Step: " + String(step));
+    
+    StaticJsonDocument<200> response;
+    response["status"] = "success";
+    response["command"] = doc["command"];
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
 }
 
 // Main Setup
