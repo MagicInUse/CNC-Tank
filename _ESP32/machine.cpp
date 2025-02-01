@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
+#include <ArduinoJson.h>
 
 WebServer server(80);
 
@@ -13,9 +14,39 @@ void handleTestData() {
 }
 
 void handleTestControl() {
-    String command = server.arg("command");
+    if (server.hasArg("plain") == false) {
+        server.send(400, "application/json", "{\"error\": \"No data received\"}");
+        return;
+    }
+    
+    String body = server.arg("plain");
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, body);
+    
+    if (error) {
+        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
+        return;
+    }
+    
+    if (!doc.containsKey("command")) {
+        server.send(400, "application/json", "{\"error\": \"Missing command parameter\"}");
+        return;
+    }
+    
+    String command = doc["command"];
     Serial.println("Received command: " + command);
-    server.send(200, "text/plain", "Command received");
+    
+    if (command == "ON" || command == "OFF") {
+        StaticJsonDocument<200> response;
+        response["status"] = "success";
+        response["command"] = command;
+        
+        String responseStr;
+        serializeJson(response, responseStr);
+        server.send(200, "application/json", responseStr);
+    } else {
+        server.send(400, "application/json", "{\"error\": \"Invalid command value\"}");
+    }
 }
 
 // Main Setup
