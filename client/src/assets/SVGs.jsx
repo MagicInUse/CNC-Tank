@@ -1,7 +1,6 @@
 import React from "react";
-import { SVGProps } from "react";
 
-export function HomingSVG(props: SVGProps<SVGSVGElement>) {
+export function HomingSVG(props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -18,7 +17,7 @@ export function HomingSVG(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-export function HomedSVG(props: SVGProps<SVGSVGElement>) {
+export function HomedSVG(props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -35,7 +34,7 @@ export function HomedSVG(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-export function StopSVG(props: SVGProps<SVGSVGElement>) {
+export function StopSVG(props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -91,7 +90,7 @@ export function StopSVG(props: SVGProps<SVGSVGElement>) {
 }
 
 
-export function ArrowUpSVG(props: SVGProps<SVGSVGElement>) {
+export function ArrowUpSVG(props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -108,7 +107,7 @@ export function ArrowUpSVG(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-export function NoWifiSVG(props: SVGProps<SVGSVGElement>) {
+export function NoWifiSVG(props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -172,7 +171,7 @@ export function NoWifiSVG(props: SVGProps<SVGSVGElement>) {
 }
 
 
-export function WifiSVG(props: SVGProps<SVGSVGElement>) {
+export function WifiSVG(props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

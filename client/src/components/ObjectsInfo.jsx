@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { FixedSizeList } from 'react-window';
 import '../assets/filecompare.css';
 
@@ -8,6 +8,12 @@ const ObjectsInfo = () => {
     const [objectsInfo, setObjectsInfo] = useState(null);
     const [isValidFile, setIsValidFile] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [opacity, setOpacity] = useState(100);
+
+    const handleClose = () => {
+        setIsOpen(false);
+        setOpacity(100); // Reset opacity when closing
+    };
 
     const extractObjectsInfo = (content) => {
         try {
@@ -153,67 +159,91 @@ const ObjectsInfo = () => {
 
     return (
         <>
-            <button className="compare-button" onClick={() => setIsOpen(true)}>
-                View G-code Objects
-            </button>
+            {!isOpen && (
+                <button className="compare-button" onClick={() => setIsOpen(true)}>
+                    View G-code Objects
+                </button>
+            )}
 
             {isOpen && (
-                <div className="modal-overlay">
+                <>
+                    <div 
+                        className="modal-overlay"
+                        style={{ 
+                            opacity: opacity / 100,
+                            pointerEvents: opacity <= 10 ? 'none' : 'auto' 
+                        }}
+                    >
                     <div className="modal-container">
+                        <input
+                            type="range"
+                            min="10"
+                            max="100"
+                            value={opacity}
+                            onChange={(e) => setOpacity(e.target.value)}
+                            className="opacity-slider fixed -right-3 top-1/2 -translate-y-1/2 h-full"
+                            style={{
+                                writingMode: 'bt-lr',
+                                WebkitAppearance: 'slider-vertical',
+                                // pointerEvents: 'auto' // Keep slider interactive
+                            }}
+                        />
                         <div className="modal-content">
                             <div className="column-container">
                                 <div className="column">
-                                    <h2 className="text-center">G-code File</h2>
-                                    <div 
-                                        className={`dropzone flex flex-col items-center justify-center ${isDragging ? 'dragging' : ''}`}
-                                        onDragOver={(e) => {
-                                            e.preventDefault();
-                                            setIsDragging(true);
-                                        }}
-                                        onDragLeave={() => setIsDragging(false)}
-                                        onDrop={handleDrop}
-                                    >
-                                        {isLoading ? (
-                                            <p>Loading...</p>
-                                        ) : objectsInfo ? (
-                                            <ContentDisplay />
-                                        ) : (
-                                            <div className="text-center">
-                                                <p>Drag and drop .gcode or .bgcode file here</p>
-                                                <p>or</p>
-                                                <label className="cursor-pointer px-4 py-2 bg-[#2a2a2a] border border-[rgba(255,255,255,0.1)] rounded-lg hover:border-[#2cc51e] hover:bg-[#333333] transition-colors">
-                                                    Choose File
-                                                    <input
-                                                        type="file"
-                                                        accept=".gcode,.bgcode"
-                                                        onChange={handleFileSelect}
-                                                        className="hidden"
-                                                    />
-                                                </label>
+                                    <h2 className="text-center">Original G-code</h2>
+                                        <div 
+                                            className={`dropzone flex flex-col items-center justify-center ${isDragging ? 'dragging' : ''}`}
+                                            onDragOver={(e) => {
+                                                e.preventDefault();
+                                                setIsDragging(true);
+                                            }}
+                                            onDragLeave={() => setIsDragging(false)}
+                                            onDrop={handleDrop}
+                                        >
+                                            {isLoading ? (
+                                                <p>Loading...</p>
+                                            ) : objectsInfo ? (
+                                                <ContentDisplay />
+                                            ) : (
+                                                <div className="text-center">
+                                                    <p>Drag and drop .gcode or .bgcode file here</p>
+                                                    <p>or</p>
+                                                    <label className="cursor-pointer px-4 py-2 bg-[#2a2a2a] border border-[rgba(255,255,255,0.1)] rounded-lg hover:border-[#2cc51e] hover:bg-[#333333] transition-colors">
+                                                        Choose File
+                                                        <input
+                                                            type="file"
+                                                            accept=".gcode,.bgcode"
+                                                            onChange={handleFileSelect}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                </div>
+                                            )}
                                             </div>
-                                        )}
+                                        </div>
+                                    <div className="column">
+                                        <h2 className="text-center">Recompiled G-code</h2>
+                                        <div className="recompzone flex flex-col items-center justify-center">
+                                            {isValidFile ? (
+                                                <ContentDisplay />
+                                            ) : (
+                                                <p className="text-center">Waiting for G-code file...</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="column">
-                                    <h2 className="text-center">Extracted Objects Info</h2>
-                                    <div className="recompzone flex flex-col items-center justify-center">
-                                        {isValidFile ? (
-                                            <ContentDisplay />
-                                        ) : (
-                                            <p className="text-center">Waiting for G-code file...</p>
-                                        )}
-                                    </div>
-                                </div>
+                                <button 
+                                    className="close-button w-1/2 mx-auto mb-0"
+                                    onClick={handleClose}
+                                    style={{ pointerEvents: 'auto' }} // Keep button interactive
+                                >
+                                    Close
+                                </button>
                             </div>
-                            <button 
-                                className="close-button"
-                                onClick={() => setIsOpen(false)}
-                            >
-                                Close
-                            </button>
                         </div>
                     </div>
-                </div>
+                </>
             )}
         </>
     );
