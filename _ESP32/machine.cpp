@@ -55,6 +55,17 @@ void handleTestControl() {
     Serial.println("Direction: " + direction);
     Serial.println("Speed: " + String(speed));
     Serial.println("Step: " + String(step));
+
+    if (axis == 'z' && direction == 'up') {
+        zMove(direction, speed, step);
+    }
+    else if (axis == 'z' && direction == 'down') {
+        zMove(direction, speed, step);
+    }
+    else {
+        server.send(400, "application/json", "{\"error\": \"Invalid axis or direction\"}");
+        return;
+    }
     
     StaticJsonDocument<200> response;
     response["status"] = "success";
@@ -107,10 +118,6 @@ void setup() {
     server.on("/api/control", HTTP_POST, handleTestControl);
     server.begin();
     Serial.println("Server started on host: " + WiFi.localIP().toString());
-
-    //Test movement
-    zMove(20, 30, "up");
-    zMove(20, 30, "down");
 }
 
 // Main Loop
