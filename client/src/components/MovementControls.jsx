@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StopSVG, HomingSVG, HomedSVG, ArrowUpSVG, WifiSVG, NoWifiSVG } from '../assets/SVGs';
 
+// TODO: Spindle On/Off + Speed Slider, .nc file destructure in FileCompare or ObjectsInfo
+
 const MovementControls = () => {
   const [movementState, setMovementState] = useState('');
   const [zState, setZState] = useState('');
@@ -8,6 +10,7 @@ const MovementControls = () => {
   const [selectedStep, setSelectedStep] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showStepMenu, setShowStepMenu] = useState(false);
+  const [laserOn, setLaserOn] = useState(false);
   
   const speedMenuRef = useRef(null);
   const stepMenuRef = useRef(null);
@@ -113,12 +116,17 @@ const MovementControls = () => {
   const handleZHomeComplete = () => {
     setZState('home');
   };
+
+  const toggleLaser = () => {
+    setLaserOn(prev => !prev);
+    // TODO: Add API call to control laser
+  };
   
   // TODO: set machine state based on API response
 
   return (
     <div className="absolute bottom-10 right-10 p-2 pr-4 flex flex-row items-center border border-gray-400 bg-black bg-opacity-75 rounded-2xl">
-      <div className="flex flex-col mb-11 space-y-5 ml-2 mr-2">
+      <div className="flex flex-col space-y-2 ml-2 mr-2">
         {/* Speed Controls */}
         <div className="relative" ref={speedMenuRef}>
           <button
@@ -203,6 +211,14 @@ const MovementControls = () => {
               </div>
             )}
         </div>
+        {/* Laser button */}
+        <button
+          onClick={toggleLaser}
+          className={`w-full px-4 py-3 text-white border rounded-lg hover:bg-gray-700 
+            ${laserOn ? '!border-green-600' : '!border-red-900'}`}
+        >
+          Laser {laserOn ? 'On' : 'Off'}
+        </button>
       </div>
       {/* Z Controls */}
       <div className="flex flex-col m-2 mr-5">
