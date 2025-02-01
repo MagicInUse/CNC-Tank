@@ -2,6 +2,18 @@
 #include <WebServer.h>
 #include <ArduinoJson.h>
 
+#define stepPin 23
+#define dirPin 22
+#define enb 27
+#define stepsRev 200
+#define stepDelay 10
+
+#define revs 2
+//Number of desired full revolutions. Negative will reverse direction.
+int numRev = 0;
+
+bool revDir = 0;
+
 WebServer server(80);
 
 // TODO: Replace with your credentials
@@ -58,6 +70,14 @@ void handleTestControl() {
 
 // Main Setup
 void setup() {
+    //All pin modes are outputs.
+    pinMode(stepPin, OUTPUT);
+    pinMode(dirPin, OUTPUT);
+    pinMode(enb, OUTPUT);
+    
+    //Disable stepper at start up.
+    digitalWrite(enb, HIGH);
+
     // For tethered debugging
     Serial.begin(115200); 
 
