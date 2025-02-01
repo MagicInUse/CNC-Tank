@@ -1,24 +1,21 @@
 #include <WiFi.h>
 #include <WebServer.h>
-#include <ArduinoJson.h>
+#include <ArduinoJson.h> //Benoit's library
 
 #define stepPin 23
 #define dirPin 22
 #define enb 27
-#define stepsRev 200
-#define stepDelay 10
+#define stepsMM 10
 
-#define revs 2
 //Number of desired full revolutions. Negative will reverse direction.
 int numRev = 0;
-
 bool revDir = 0;
 
 WebServer server(80);
 
 // TODO: Replace with your credentials
-const char* ssid = "SSID";
-const char* password = "PASSWORD";
+const char* ssid = "";
+const char* password = "";
 
 // Endpoint handlers
 void handleTestData() {
@@ -51,7 +48,7 @@ void handleTestControl() {
     String axis = doc["command"]["axis"];
     String direction = doc["command"]["direction"];
     int speed = doc["command"]["speed"];
-    float step = doc["command"]["step"];
+    int step = doc["command"]["step"];
     
     Serial.println("Received command:");
     Serial.println("Axis: " + axis);
@@ -68,6 +65,24 @@ void handleTestControl() {
     server.send(200, "application/json", responseStr);
 }
 
+//TO-DO get direction reveresed/not reveresed as bool
+//Function takes the distance desired "step" multiplies it be the step per mm, and delays "speed" #ms between steps. And a string of up/down
+void zMove(int step, int speed, String rev){
+  digitalWrite(enb, LOW);//Enable stepper
+  if(rev == "up"){
+    digitalWrite(dirPin, LOW);
+  }else{
+    digitalWrite(dirPin, HIGH);
+  }
+  for(int i = 0; i <= step * stepsMM; i++){
+    digitalWrite(stepPin, HIGH);
+    delay(speed);
+    digitalWrite(stepPin, LOW);
+    delay(speed);
+  }
+  digitalWrite(enb, HIGH);//Disable stepper.
+}
+
 // Main Setup
 void setup() {
     //All pin modes are outputs.
@@ -75,7 +90,7 @@ void setup() {
     pinMode(dirPin, OUTPUT);
     pinMode(enb, OUTPUT);
     
-    //Disable stepper at start up.
+    //Disable stepper(s) at start up.
     digitalWrite(enb, HIGH);
 
     // For tethered debugging
@@ -92,6 +107,10 @@ void setup() {
     server.on("/api/control", HTTP_POST, handleTestControl);
     server.begin();
     Serial.println("Server started on host: " + WiFi.localIP().toString());
+
+    //Test movement
+    zMove(20, 30, "up");
+    zMove(20, 30, "down");
 }
 
 // Main Loop
