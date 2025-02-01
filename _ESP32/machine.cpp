@@ -22,7 +22,7 @@ void handleTestData() {
     server.send(200, "application/json", "{\"temperature\": 25, \"humidity\": 60}");
 }
 
-void handleTestControl() {
+void handleControl() {
     if (server.hasArg("plain") == false) {
         server.send(400, "application/json", "{\"error\": \"No data received\"}");
         return;
@@ -56,11 +56,11 @@ void handleTestControl() {
     Serial.println("Speed: " + String(speed));
     Serial.println("Step: " + String(step));
 
-    if (axis == 'z' && direction == 'up') {
-        zMove(direction, speed, step);
+    if (axis == "z" && direction == "up") {
+        zMove(step, speed, direction);
     }
-    else if (axis == 'z' && direction == 'down') {
-        zMove(direction, speed, step);
+    else if (axis == "z" && direction == "down") {
+        zMove(step, speed, direction);
     }
     else {
         server.send(400, "application/json", "{\"error\": \"Invalid axis or direction\"}");
@@ -115,7 +115,7 @@ void setup() {
 
     // Endpoint Initialization
     server.on("/api/test-data", HTTP_GET, handleTestData);
-    server.on("/api/control", HTTP_POST, handleTestControl);
+    server.on("/api/control", HTTP_POST, handleControl);
     server.begin();
     Serial.println("Server started on host: " + WiFi.localIP().toString());
 }
