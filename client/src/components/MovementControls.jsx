@@ -226,8 +226,10 @@ const MovementControls = () => {
         {/* Laser button */}
         <button
           onClick={toggleLaser}
-          className={`w-full px-4 py-3 text-white border rounded-lg hover:bg-gray-700 
-            ${laserOn ? '!border-green-600' : '!border-red-900'}`}
+          className={`w-full px-4 py-3 text-white border rounded-lg hover:bg-gray-700
+            ${laserOn 
+              ? '!border-green-600 hover:!border-green-600' 
+              : '!border-red-900 hover:!border-red-900'}`}
         >
           Laser {laserOn ? 'On' : 'Off'}
         </button>
@@ -247,7 +249,9 @@ const MovementControls = () => {
         <button
           onClick={toggleSpindle}
           className={`w-12 h-12 text-sm text-white border rounded-lg hover:bg-gray-700 
-            ${spindleOn ? '!border-green-600' : '!border-red-900'}`}
+            ${spindleOn 
+              ? '!border-green-600 hover:!border-green-600' 
+              : '!border-red-900 hover:!border-red-900'}`}
         >
           <SpindleSVG />
         </button>
