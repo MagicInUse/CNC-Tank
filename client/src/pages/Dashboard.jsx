@@ -1,19 +1,22 @@
 import React from 'react';
 import LocationCoordinates from '../components/LocationCoordinates';
+import Console from '../components/Console';
 import MovementControls from '../components/MovementControls';
 import ConfigMenu from '../components/ConfigMenu';
-import FileCompare from '../components/FileCompare';
-import ObjectsInfo from '../components/ObjectsInfo';
-import Tester from './Tester';
+// import FileCompare from '../components/FileCompare';
+// import ObjectsInfo from '../components/ObjectsInfo';
+import NCInfo from '../components/NCInfo';
 
 const Dashboard = () => {
     return (
         <>
             <ConfigMenu />
             <LocationCoordinates />
+            <Console />
             <MovementControls />
             {/* <FileCompare /> */}
-            <ObjectsInfo />
+            {/* <ObjectsInfo /> */}
+            <NCInfo />
         </>
     );
 };
