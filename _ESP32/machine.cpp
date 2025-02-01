@@ -37,7 +37,7 @@ void handleTestControl() {
     Serial.println("Received command: " + command);
     
     if (command == "ON" || command == "OFF") {
-        StaticJsonDocument<200> response;  // Changed from JsonDocument
+        StaticJsonDocument<200> response;
         response["status"] = "success";
         response["command"] = command;
         
