@@ -73,6 +73,26 @@ const MovementControls = () => {
     }
   };
 
+  const handleZCommand = async (command) => {
+    try {
+      const response = await fetch('/api/control', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
+      console.log(`Z-axis ${command} command sent`);
+    } catch (error) {
+      console.error('Error sending command:', error);
+    }
+  };
+
   const handleMovementHomeComplete = () => {
     setTimeout(() => {
       // TODO: Add if statement to check if still connected to machine then idle, else ''
@@ -176,16 +196,24 @@ const MovementControls = () => {
       </div>
       {/* Z Controls */}
       <div className="flex flex-col m-2 mr-5">
-        <button type="button" className="w-12 h-14 p-2 rounded-lg flex items-center justify-center">
-          <ArrowUpSVG className="w-full h-full" />
-        </button>
-        <button type="button" className="w-12 h-12 mt-1 p-2 rounded-lg flex items-center justify-center">
-          {getZCenterButtonSVG()}
-        </button>
-        <button type="button" className="w-12 h-14 p-2 mt-1 rounded-lg flex items-center justify-center">
-          <ArrowUpSVG className="w-full h-full rotate-180" />
-        </button>
-      </div>
+      <button 
+        type="button" 
+        className="w-12 h-14 p-2 rounded-lg flex items-center justify-center"
+        onClick={() => handleZCommand('ON')}
+      >
+        <ArrowUpSVG className="w-full h-full" />
+      </button>
+      <button type="button" className="w-12 h-12 mt-1 p-2 rounded-lg flex items-center justify-center">
+        {getZCenterButtonSVG()}
+      </button>
+      <button 
+        type="button" 
+        className="w-12 h-14 p-2 mt-1 rounded-lg flex items-center justify-center"
+        onClick={() => handleZCommand('OFF')}
+      >
+        <ArrowUpSVG className="w-full h-full rotate-180" />
+      </button>
+    </div>
       {/* Directional Controls */}
       <div className="grid grid-cols-3 gap-2 w-40">
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
