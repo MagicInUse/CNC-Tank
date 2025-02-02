@@ -9,7 +9,8 @@ const LocationCoordinates = () => {
             setCoordinates({ 
                 x: (Math.random() * 100000).toFixed(4), 
                 y: (Math.random() * 100000).toFixed(4), 
-                z: (Math.random() * 100000).toFixed(4) 
+                z: (Math.random() * 100000).toFixed(4),
+                theta: (Math.random() * 360).toFixed(2)
             });
         };
 
@@ -24,6 +25,7 @@ const LocationCoordinates = () => {
             <p>X: <span className="float-right">{coordinates.x}</span></p>
             <p>Y: <span className="float-right">{coordinates.y}</span></p>
             <p>Z: <span className="float-right">{coordinates.z}</span></p>
+            <p>θ: <span className="float-right">{coordinates.theta}°</span></p>
         </div>
     );
 };

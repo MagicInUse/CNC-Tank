@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StopSVG, HomingSVG, HomedSVG, ArrowUpSVG, WifiSVG, NoWifiSVG } from '../assets/SVGs';
+import { StopSVG, HomingSVG, HomedSVG, ArrowUpSVG, WifiSVG, NoWifiSVG, SpindleSVG } from '../assets/SVGs';
+
+// TODO: .nc file destructure in FileCompare or ObjectsInfo
 
 const MovementControls = () => {
   const [movementState, setMovementState] = useState('');
@@ -8,6 +10,9 @@ const MovementControls = () => {
   const [selectedStep, setSelectedStep] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showStepMenu, setShowStepMenu] = useState(false);
+  const [laserOn, setLaserOn] = useState(false);
+  const [spindleOn, setSpindleOn] = useState(false);
+  const [spindleSpeed, setSpindleSpeed] = useState(100);
   
   const speedMenuRef = useRef(null);
   const stepMenuRef = useRef(null);
@@ -113,13 +118,28 @@ const MovementControls = () => {
   const handleZHomeComplete = () => {
     setZState('home');
   };
+
+  const toggleLaser = () => {
+    setLaserOn(prev => !prev);
+    // TODO: Add API call to control laser
+  };
+  
+  const toggleSpindle = () => {
+    setSpindleOn(prev => !prev);
+    // TODO: Add API call to control spindle
+  };
+
+  const handleSpindleSpeed = (event) => {
+    setSpindleSpeed(event.target.value);
+    // TODO: Add API call to update spindle speed
+  };
   
   // TODO: set machine state based on API response
 
   return (
-    <div className="absolute bottom-10 right-10 p-2 pr-4 flex flex-row items-center border border-gray-400 bg-black bg-opacity-75 rounded-2xl">
-      <div className="flex flex-col mb-11 space-y-5 ml-2 mr-2">
-        {/* Speed Controls */}
+    <div className="absolute bottom-10 right-10 p-2 flex flex-row items-center border border-gray-400 bg-black bg-opacity-75 rounded-2xl">
+      <div className="flex flex-col space-y-2">
+        {/* Speed Control */}
         <div className="relative" ref={speedMenuRef}>
           <button
             onClick={() => setShowSpeedMenu(!showSpeedMenu)}
@@ -162,7 +182,7 @@ const MovementControls = () => {
             )}
           </button>
         </div>
-        {/* Steps Controls */}
+        {/* Steps Control */}
         <div className="relative" ref={stepMenuRef}>
           <button
             onClick={() => setShowStepMenu(!showStepMenu)}
@@ -203,28 +223,60 @@ const MovementControls = () => {
               </div>
             )}
         </div>
+        {/* Laser button */}
+        <button
+          onClick={toggleLaser}
+          className={`w-full px-4 py-3 text-white border rounded-lg hover:bg-gray-700
+            ${laserOn 
+              ? '!border-green-600 hover:!border-green-600' 
+              : '!border-red-900 hover:!border-red-900'}`}
+        >
+          Laser {laserOn ? 'On' : 'Off'}
+        </button>
       </div>
-      {/* Z Controls */}
-      <div className="flex flex-col m-2 mr-5">
-      <button 
-        type="button" 
-        className="w-12 h-14 p-2 rounded-lg flex items-center justify-center"
-        onClick={() => handleZCommand('UP')}
-      >
-        <ArrowUpSVG className="w-full h-full" />
-      </button>
-      <button type="button" className="w-12 h-12 mt-1 p-2 rounded-lg flex items-center justify-center">
-        {getZCenterButtonSVG()}
-      </button>
-      <button 
-        type="button" 
-        className="w-12 h-14 p-2 mt-1 rounded-lg flex items-center justify-center"
-        onClick={() => handleZCommand('DOWN')}
-      >
-        <ArrowUpSVG className="w-full h-full rotate-180" />
-      </button>
-    </div>
-      {/* Directional Controls */}
+      {/* Spindle Control */}
+      <div className="flex flex-col items-center justify-end space-y-2 m-2">
+        <div className="relative h-20 mb-6">
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={spindleSpeed}
+            onChange={handleSpindleSpeed}
+            className="absolute -bottom-12 w-28 h-12 -rotate-90 transform origin-bottom-left translate-x-6 -translate-y-6"
+          />
+        </div>
+        <button
+          onClick={toggleSpindle}
+          className={`w-12 h-12 text-sm text-white border rounded-lg hover:bg-gray-700 
+            ${spindleOn 
+              ? '!border-green-600 hover:!border-green-600' 
+              : '!border-red-900 hover:!border-red-900'}`}
+        >
+          <SpindleSVG />
+        </button>
+      </div>
+      {/* Z Control */}
+      <div className="flex flex-col items-center mr-2">
+        <button 
+          type="button" 
+          className="w-12 h-14 p-2 rounded-lg flex items-center justify-center"
+          onClick={() => handleZCommand('UP')}
+        >
+          <ArrowUpSVG className="w-full h-full" />
+        </button>
+        <button type="button" className="w-12 h-12 mt-1 p-2 rounded-lg flex items-center justify-center">
+          {getZCenterButtonSVG()}
+        </button>
+        <button 
+          type="button" 
+          className="w-12 h-14 p-2 mt-1 rounded-lg flex items-center justify-center"
+          onClick={() => handleZCommand('DOWN')}
+        >
+          <ArrowUpSVG className="w-full h-full rotate-180" />
+        </button>
+      </div>
+      {/* Directional Control */}
       <div className="grid grid-cols-3 gap-2 w-40">
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
           <ArrowUpSVG className="w-full h-full -rotate-45" />
