@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const ConfigMenu = () => {
     const [showConfig, setShowConfig] = useState(false);
@@ -6,6 +7,33 @@ const ConfigMenu = () => {
     const [isValid, setIsValid] = useState(true);
     const [vacuumAndSpindle, setVacuumAndSpindle] = useState(false);
     const [vacuumOnly, setVacuumOnly] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState('unknown'); // 'unknown', 'connected', 'failed'
+
+    // Add debounced ping function after handleIPChange
+    useEffect(() => {
+        if (!isValid) {
+            setConnectionStatus('unknown');
+            return;
+        }
+    
+        const timeoutId = setTimeout(async () => {
+            try {
+                const response = await axios.post('http://localhost:3001/api/status', {
+                    ipAddress: ipAddress
+                });
+                
+                if (response.data.status === 'connected') {
+                    setConnectionStatus('connected');
+                } else {
+                    setConnectionStatus('failed');
+                }
+            } catch (error) {
+                setConnectionStatus('failed');
+            }
+        }, 3000);
+    
+        return () => clearTimeout(timeoutId);
+    }, [ipAddress, isValid]);
     
     const formatIP = (input) => {
         // Handle empty or invalid input
@@ -40,6 +68,7 @@ const ConfigMenu = () => {
         const formatted = formatIP(e.target.value)
         setIpAddress(formatted)
         setIsValid(validateIP(formatted))
+
     }
     
     const validateIP = (ip) => {
@@ -92,7 +121,17 @@ const ConfigMenu = () => {
                     <h3 className="text-lg font-semibold mb-2">Configuration</h3>
                     <div className="space-y-2">
                         <label className="flex flex-col space-y-1">
-                            <span className="text-sm font-medium text-gray-500">IP Address:</span>
+                            <span className="text-sm font-medium text-gray-500">
+                            <div style={{ 
+                                height: '12px', 
+                                width: '12px', 
+                                borderRadius: '50%',
+                                backgroundColor: connectionStatus === 'connected' ? 'green' : 
+                                                connectionStatus === 'failed' ? 'red' : 
+                                                'gray',
+                                display: 'inline-flex',
+                                marginLeft: '10px'
+                            }} /> IP Address:</span>
                             <input 
                                 type="text" 
                                 value={ipAddress}

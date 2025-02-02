@@ -4,7 +4,7 @@ import cors from 'cors';
 
 const app = express();
 
-const BASE_URL = 'http://192.168.68.117';
+let BASE_URL = 'http://192.168.1.1';
 const PORT = 3001;
 
 // CORS configuration
@@ -16,6 +16,32 @@ const corsOptions = {
   
 app.use(cors(corsOptions));
 app.use(express.json());
+
+
+app.post('/api/status', async (req, res) => {
+    const { ipAddress } = req.body;
+    
+    if (!ipAddress) {
+        return res.status(400).json({ error: 'IP address is required' });
+    }
+
+    try {
+        // Update BASE_URL with new IP
+        BASE_URL = `http://${ipAddress}`;
+        
+        // Test connection to ESP32
+        const response = await axios.get(`${BASE_URL}/api/status`, {
+            timeout: 3000
+        });
+        
+        res.json({ status: 'connected', data: response.data });
+    } catch (error) {
+        res.status(500).json({ 
+            status: 'failed', 
+            error: error.response?.data?.error || 'Error connecting to ESP32' 
+        });
+    }
+});
 
 // Endpoint to send commands to ESP32
 app.post('/api/control', async (req, res) => {
