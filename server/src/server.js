@@ -4,7 +4,7 @@ import cors from 'cors';
 
 const app = express();
 
-const BASE_URL = 'http://192.168.68.117';
+const BASE_URL = 'http://10.0.0.51';
 const PORT = 3001;
 
 // CORS configuration
