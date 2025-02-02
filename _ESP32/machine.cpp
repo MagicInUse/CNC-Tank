@@ -22,6 +22,15 @@ void handleTestData() {
     server.send(200, "application/json", "{\"temperature\": 25, \"humidity\": 60}");
 }
 
+void handleStatus() {
+    StaticJsonDocument<200> response;
+    response["status"] = "connected";
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
+}
+
 void handleControl() {
     if (server.hasArg("plain") == false) {
         server.send(400, "application/json", "{\"error\": \"No data received\"}");
@@ -114,6 +123,7 @@ void setup() {
     Serial.println("Connected!");
 
     // Endpoint Initialization
+    server.on("/api/status", HTTP_GET, handleStatus);
     server.on("/api/test-data", HTTP_GET, handleTestData);
     server.on("/api/control", HTTP_POST, handleControl);
     server.begin();

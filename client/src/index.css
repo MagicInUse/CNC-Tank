@@ -39,9 +39,4 @@
     border-color: #2cc51e !important;
     background-color: #333333 !important;
   }
-
-  button:focus,
-  button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color !important;
-  }
 }
