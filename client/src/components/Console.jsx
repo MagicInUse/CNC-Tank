@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useContext } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import { ConsoleContext } from '../context/ConsoleContext';
 import { useConsoleLog } from '../utils/ConsoleLog';
 
@@ -6,6 +6,7 @@ const Console = () => {
     const { messages } = useContext(ConsoleContext);
     const { logRequest } = useConsoleLog();
     const consoleEndRef = useRef(null);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     // Auto-scroll to bottom when new messages arrive
     const scrollToBottom = () => {
@@ -17,10 +18,17 @@ const Console = () => {
     }, [messages]);
 
     return (
-        <div className="fixed bottom-64 right-10 console h-64 border border-gray-400 bg-black bg-opacity-75 rounded-lg overflow-hidden">
-            <div className="flex flex-col h-full">
+        <div className={`fixed bottom-64 right-10 console ${isExpanded ? 'h-1/2' : 'h-64'} border border-gray-400 bg-black bg-opacity-75 rounded-lg overflow-hidden`}>
+            <div className="flex flex-col h-full relative">
+                {/* Expand/Collapse Button */}
+                <button 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="absolute top-2 right-2 text-gray-400 hover:text-white z-10 w-6 h-6 flex items-center justify-center bg-black bg-opacity-50 rounded"
+                >
+                    {isExpanded ? '−' : '+'}
+                </button>
                 {/* Console Output */}
-                <div className="flex-1 overflow-y-auto p-2 font-mono text-sm">
+                <div className="flex-1 overflow-y-auto p-2 font-mono text-sm scrollbar-hide">
                     {messages.map((msg, index) => (
                         <div 
                             key={index} 

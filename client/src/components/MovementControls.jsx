@@ -327,7 +327,7 @@ const MovementControls = () => {
         <button 
           type="button" 
           className="w-12 h-14 p-2 rounded-lg flex items-center justify-center"
-          onClick={() => handleZCommand('UP')}
+          onClick={() => handleZCommand('up')}
         >
           <ArrowUpSVG className="w-full h-full" />
         </button>
@@ -337,7 +337,7 @@ const MovementControls = () => {
         <button 
           type="button" 
           className="w-12 h-14 p-2 mt-1 rounded-lg flex items-center justify-center"
-          onClick={() => handleZCommand('DOWN')}
+          onClick={() => handleZCommand('down')}
         >
           <ArrowUpSVG className="w-full h-full rotate-180" />
         </button>
