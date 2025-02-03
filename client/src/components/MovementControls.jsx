@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StopSVG, HomingSVG, HomedSVG, ArrowUpSVG, WifiSVG, NoWifiSVG, SpindleSVG } from '../assets/SVGs';
+import { useConsoleLog } from '../utils/ConsoleLog';
 
 // TODO: .nc file destructure in FileCompare or ObjectsInfo
 
@@ -16,9 +17,21 @@ const MovementControls = () => {
   
   const speedMenuRef = useRef(null);
   const stepMenuRef = useRef(null);
+  
+  // Console log hooks
+  const { logRequest, logResponse, logError } = useConsoleLog();
+
+  const updateMovementStatus = (newState) => {
+    setMovementState(newState);
+    logResponse(`Movement state changed to: ${newState}`);
+  };
+  
+  const updateZStatus = (newState) => {
+    setZState(newState);
+    logResponse(`Z-axis state changed to: ${newState}`);
+  };
 
   useEffect(() => {
-    
     const handleClickOutside = (event) => {
       if (speedMenuRef.current && !speedMenuRef.current.contains(event.target)) {
         setShowSpeedMenu(false);
@@ -44,16 +57,6 @@ const MovementControls = () => {
     };
   }, [showSpeedMenu, showStepMenu]);
 
-  const handleSpeedSelect = (speed) => {
-    setSelectedSpeed(speed);
-    setShowSpeedMenu(false);
-  };
-
-  const handleStepSelect = (step) => {
-    setSelectedStep(step);
-    setShowStepMenu(false);
-  };
-
   const getMovementCenterButtonSVG = () => {
     switch (movementState) {
       case 'home':
@@ -77,6 +80,57 @@ const MovementControls = () => {
         return <HomingSVG className="w-full h-full" />;
     }
   };
+  
+  const toggleSpindle = () => {
+    setSpindleOn(prev => {
+      const newState = !prev;
+      logResponse(`Spindle ${newState ? 'started' : 'stopped'} at ${parseInt(spindleSpeed)}%`);
+      return newState;
+    });
+  };
+  
+  const toggleLaser = () => {
+    setLaserOn(prev => {
+      const newState = !prev;
+      logResponse(`Laser ${newState ? 'enabled' : 'disabled'}`);
+      return newState;
+    });
+  };
+  
+  const handleSpindleSpeed = (event) => {
+    const speed = parseInt(event.target.value);
+    setSpindleSpeed(speed);
+    logResponse(`Spindle speed set to ${speed}%`);
+    if (spindleOn) {
+      logRequest(`Updating running spindle speed to ${speed}%`);
+    }
+  };
+
+  // Track speed changes without sending updates
+  const handleSpindleSpeedChange = (event) => {
+    const speed = parseInt(event.target.value);
+    setSpindleSpeed(speed);
+  };
+
+  // Send update when slider movement ends
+  const handleSpindleSpeedCommit = () => {
+    logResponse(`Spindle speed set to ${spindleSpeed}%`);
+    if (spindleOn) {
+      logRequest(`Updating running spindle speed to ${spindleSpeed}%`);
+    }
+  };
+
+  const handleSpeedSelect = (speed) => {
+    setSelectedSpeed(speed);
+    logResponse(`Movement speed set to ${speed} mm/s`);
+    setShowSpeedMenu(false);
+  };
+  
+  const handleStepSelect = (step) => {
+    setSelectedStep(step);
+    logResponse(`Step size set to ${step} mm`);
+    setShowStepMenu(false);
+  };
 
   const handleZCommand = async (direction) => {
     try {
@@ -87,51 +141,34 @@ const MovementControls = () => {
         step: selectedStep
       };
   
+      logRequest(`Sending Z-axis command: ${direction} (Speed: ${selectedSpeed}, Step: ${selectedStep})`);
+      
       const response = await fetch('http://localhost:3001/api/control', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ command })
+        body: JSON.stringify(command)
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  
+      if (response.ok) {
+        logResponse(`Z-axis ${direction} command executed successfully`);
+      } else {
+        logError(`Failed to execute Z-axis ${direction} command`);
       }
-      
-      const data = await response.json();
-      console.log('Command response:', data);
     } catch (error) {
-      console.error('Error sending command:', error);
+      logError(`Error executing Z-axis command: ${error.message}`);
     }
   };
-
+  
+  // Update the handleMovementHomeComplete function
   const handleMovementHomeComplete = () => {
     setTimeout(() => {
       // TODO: Add if statement to check if still connected to machine then idle, else ''
-      setMovementState('idle');
+      updateMovementStatus('idle');
       // TODO: Decide if we want everything to home with Movement or keep Z separate
-      //handleZHomeComplete();
-    }, 5000);
-  };
-
-  const handleZHomeComplete = () => {
-    setZState('home');
-  };
-
-  const toggleLaser = () => {
-    setLaserOn(prev => !prev);
-    // TODO: Add API call to control laser
-  };
-  
-  const toggleSpindle = () => {
-    setSpindleOn(prev => !prev);
-    // TODO: Add API call to control spindle
-  };
-
-  const handleSpindleSpeed = (event) => {
-    setSpindleSpeed(event.target.value);
-    // TODO: Add API call to update spindle speed
+      updateZStatus('home');
+    }, 1000);
   };
   
   // TODO: set machine state based on API response
@@ -241,9 +278,11 @@ const MovementControls = () => {
             type="range"
             min="0"
             max="100"
-            value={spindleSpeed}
-            onChange={handleSpindleSpeed}
-            className="absolute -bottom-12 w-28 h-12 -rotate-90 transform origin-bottom-left translate-x-6 -translate-y-6"
+            value={parseInt(spindleSpeed)}
+            onChange={handleSpindleSpeedChange}
+            onMouseUp={handleSpindleSpeedCommit}
+            onTouchEnd={handleSpindleSpeedCommit}
+            className="absolute spindle-percent -bottom-12 w-28 h-12 -rotate-90 transform origin-bottom-left translate-x-6 -translate-y-6"
           />
         </div>
         <button
