@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useConsoleLog } from '../utils/ConsoleLog';
 
 const ConfigMenu = () => {
     const [showConfig, setShowConfig] = useState(false);
@@ -9,14 +10,24 @@ const ConfigMenu = () => {
     const [vacuumOnly, setVacuumOnly] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState('unknown'); // 'unknown', 'connected', 'failed'
 
+    // Add Console log hooks
+    const { logRequest, logResponse, logError } = useConsoleLog();
+
     // Add debounced ping function after handleIPChange
     useEffect(() => {
-        if (!isValid) {
+        if (!isValid || !ipAddress.trim()) {
             setConnectionStatus('unknown');
+            return;
+        }
+        
+        // Check if IP has all 4 octets
+        const octets = ipAddress.split('.');
+        if (octets.length !== 4 || octets.some(octet => octet === '')) {
             return;
         }
     
         const timeoutId = setTimeout(async () => {
+            logRequest(`Checking connection to IP: ${ipAddress}`);
             try {
                 const response = await axios.post('http://localhost:3001/api/status', {
                     ipAddress: ipAddress
@@ -24,13 +35,16 @@ const ConfigMenu = () => {
                 
                 if (response.data.status === 'connected') {
                     setConnectionStatus('connected');
+                    logResponse(`Successfully connected to ${ipAddress}`);
                 } else {
                     setConnectionStatus('failed');
+                    logError(`Failed to connect to ${ipAddress}`);
                 }
             } catch (error) {
                 setConnectionStatus('failed');
+                logError(`Connection error: ${error.message}`);
             }
-        }, 3000);
+        }, 1000);
     
         return () => clearTimeout(timeoutId);
     }, [ipAddress, isValid]);
@@ -65,10 +79,9 @@ const ConfigMenu = () => {
     };
     
     const handleIPChange = (e) => {
-        const formatted = formatIP(e.target.value)
-        setIpAddress(formatted)
-        setIsValid(validateIP(formatted))
-
+        const formatted = formatIP(e.target.value);
+        setIpAddress(formatted);
+        setIsValid(validateIP(formatted));
     }
     
     const validateIP = (ip) => {
@@ -104,13 +117,19 @@ const ConfigMenu = () => {
         setVacuumAndSpindle(e.target.checked);
         if (e.target.checked) {
             setVacuumOnly(false);
+            logResponse('Vacuum & Spindle mode enabled');
+        } else {
+            logResponse('Vacuum & Spindle mode disabled');
         }
     };
-
+    
     const handleVacuumOnlyChange = (e) => {
         setVacuumOnly(e.target.checked);
         if (e.target.checked) {
             setVacuumAndSpindle(false);
+            logResponse('Vacuum only mode enabled');
+        } else {
+            logResponse('Vacuum only mode disabled');
         }
     };
 
