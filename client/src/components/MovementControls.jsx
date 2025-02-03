@@ -14,6 +14,8 @@ const MovementControls = () => {
   const [laserOn, setLaserOn] = useState(false);
   const [spindleOn, setSpindleOn] = useState(false);
   const [spindleSpeed, setSpindleSpeed] = useState(100);
+  const [isDragging, setIsDragging] = useState(false);
+  const [thumbPosition, setThumbPosition] = useState(0);
   
   const speedMenuRef = useRef(null);
   const stepMenuRef = useRef(null);
@@ -279,11 +281,36 @@ const MovementControls = () => {
             min="0"
             max="100"
             value={parseInt(spindleSpeed)}
-            onChange={handleSpindleSpeedChange}
-            onMouseUp={handleSpindleSpeedCommit}
-            onTouchEnd={handleSpindleSpeedCommit}
-            className="absolute spindle-percent -bottom-12 w-28 h-12 -rotate-90 transform origin-bottom-left translate-x-6 -translate-y-6"
+            onChange={(e) => {
+              handleSpindleSpeedChange(e);
+              // Calculate thumb position based on value
+              const value = parseInt(e.target.value);
+              const position = ((100 - value) / 100) * 80; // 80px is slider height
+              setThumbPosition(position);
+            }}
+            onMouseDown={() => setIsDragging(true)}
+            onMouseUp={() => {
+              setIsDragging(false);
+              handleSpindleSpeedCommit();
+            }}
+            onTouchStart={() => setIsDragging(true)}
+            onTouchEnd={() => {
+              setIsDragging(false);
+              handleSpindleSpeedCommit();
+            }}
+            className="absolute -bottom-12 w-28 h-12 -rotate-90 transform origin-bottom-left translate-x-6 -translate-y-6"
           />
+          {isDragging && (
+            <span 
+              className="absolute -left-12 w-11 text-center text-white text-sm bg-gray-700 border border-gray-300 rounded-lg p-1"
+              style={{ 
+                top: `${thumbPosition}px`,
+                transform: 'translateY(-50%)'
+              }}
+            >
+              {spindleSpeed}%
+            </span>
+          )}
         </div>
         <button
           onClick={toggleSpindle}

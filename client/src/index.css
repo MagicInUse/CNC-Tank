@@ -45,6 +45,6 @@
   }
 
   .spindle-percent {
-
+    position: relative;
   }
 }

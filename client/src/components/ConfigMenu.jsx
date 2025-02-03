@@ -38,7 +38,7 @@ const ConfigMenu = () => {
                 setConnectionStatus('failed');
                 logError(`Connection error: ${error.message}`);
             }
-        }, 3000);
+        }, 1000);
     
         return () => clearTimeout(timeoutId);
     }, [ipAddress, isValid]);
@@ -73,10 +73,9 @@ const ConfigMenu = () => {
     };
     
     const handleIPChange = (e) => {
-        const formatted = formatIP(e.target.value)
-        setIpAddress(formatted)
-        setIsValid(validateIP(formatted))
-
+        const formatted = formatIP(e.target.value);
+        setIpAddress(formatted);
+        setIsValid(validateIP(formatted));
     }
     
     const validateIP = (ip) => {
