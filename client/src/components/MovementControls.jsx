@@ -86,7 +86,11 @@ const MovementControls = () => {
   const toggleSpindle = () => {
     setSpindleOn(prev => {
       const newState = !prev;
-      logResponse(`Spindle ${newState ? 'started' : 'stopped'} at ${parseInt(spindleSpeed)}%`);
+      if (newState) {
+        logResponse(`Spindle started at ${parseInt(spindleSpeed)}%`);
+      } else {
+        logError(`Spindle stopped`);
+      }
       return newState;
     });
   };
@@ -94,7 +98,11 @@ const MovementControls = () => {
   const toggleLaser = () => {
     setLaserOn(prev => {
       const newState = !prev;
-      logResponse(`Laser ${newState ? 'enabled' : 'disabled'}`);
+      if (newState) {
+        logResponse('Laser enabled');
+      } else {
+        logError('Laser disabled');
+      }
       return newState;
     });
   };
