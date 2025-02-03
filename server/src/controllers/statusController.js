@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-let BASE_URL = '';
+import { ESP32_BASE_URL, setESP32BaseURL } from '../config/esp32.js';
 
 export const checkStatus = async (req, res) => {
     const { ipAddress } = req.body;
@@ -10,11 +9,11 @@ export const checkStatus = async (req, res) => {
     }
 
     try {
-        // Update BASE_URL with new IP
-        BASE_URL = `http://${ipAddress}`;
+        // Update ESP32_BASE_URL with new IP
+        setESP32BaseURL(ipAddress);
         
         // Test connection to ESP32
-        const response = await axios.get(`${BASE_URL}/api/status`, {
+        const response = await axios.get(`${ESP32_BASE_URL}/api/status`, {
             timeout: 3000
         });
         
