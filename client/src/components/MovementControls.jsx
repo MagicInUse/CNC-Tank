@@ -137,7 +137,7 @@ const MovementControls = () => {
   // TODO: set machine state based on API response
 
   return (
-    <div className="absolute bottom-10 right-10 p-2 flex flex-row items-center border border-gray-400 bg-black bg-opacity-75 rounded-2xl">
+    <div className="absolute bottom-10 right-11 p-2 flex flex-row items-center border border-gray-400 bg-black bg-opacity-75 rounded-2xl">
       <div className="flex flex-col space-y-2">
         {/* Speed Control */}
         <div className="relative" ref={speedMenuRef}>

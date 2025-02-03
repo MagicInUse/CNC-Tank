@@ -39,4 +39,8 @@
     border-color: #2cc51e !important;
     background-color: #333333 !important;
   }
+
+  .console {
+    width: 420px;
+  }
 }
