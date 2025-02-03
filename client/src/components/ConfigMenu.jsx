@@ -119,7 +119,7 @@ const ConfigMenu = () => {
             setVacuumOnly(false);
             logResponse('Vacuum & Spindle mode enabled');
         } else {
-            logResponse('Vacuum & Spindle mode disabled');
+            logError('Vacuum & Spindle mode disabled');
         }
     };
     
@@ -129,7 +129,7 @@ const ConfigMenu = () => {
             setVacuumAndSpindle(false);
             logResponse('Vacuum only mode enabled');
         } else {
-            logResponse('Vacuum only mode disabled');
+            logError('Vacuum only mode disabled');
         }
     };
 
