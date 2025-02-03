@@ -15,8 +15,14 @@ const ConfigMenu = () => {
 
     // Add debounced ping function after handleIPChange
     useEffect(() => {
-        if (!isValid) {
+        if (!isValid || !ipAddress.trim()) {
             setConnectionStatus('unknown');
+            return;
+        }
+        
+        // Check if IP has all 4 octets
+        const octets = ipAddress.split('.');
+        if (octets.length !== 4 || octets.some(octet => octet === '')) {
             return;
         }
     
