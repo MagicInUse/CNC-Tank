@@ -17,17 +17,12 @@ const NCInfo = () => {
 
     const extractObjectsInfo = (content) => {
         try {
-            // Look for objects_info in G-code
             const lines = content.split('\n');
-            for (const line of lines) {
-                if (line.includes('objects_info')) {
-                    const jsonStr = line.substring(line.indexOf('{'));
-                    return JSON.parse(jsonStr);
-                }
-            }
-            throw new Error('objects_info not found in G-code');
+            return JSON.stringify({
+                content: lines
+            });
         } catch (error) {
-            console.error('Error parsing objects_info:', error);
+            console.error('Error reading NC file:', error);
             throw error;
         }
     };
@@ -48,38 +43,38 @@ const NCInfo = () => {
         setIsLoading(true);
     
         const file = e.dataTransfer.files[0];
-        if (file.name.endsWith('.gcode') || file.name.endsWith('.bgcode')) {
+        if (file.name.endsWith('.nc')) {
             try {
                 const content = await readFileContent(file);
                 setObjectsInfo(content);
                 setIsValidFile(true);
             } catch (error) {
-                alert('Error: Could not find or parse objects_info');
+                alert('Error: Could not parse NC file');
                 setIsValidFile(false);
             }
         } else {
             setIsValidFile(false);
-            alert('Please drop a .gcode or .bgcode file');
+            alert('Please drop a .nc file');
         }
         setIsLoading(false);
     };
-
+    
     const handleFileSelect = async (e) => {
         const file = e.target.files[0];
         if (file) {
             setIsLoading(true);
-            if (file.name.endsWith('.gcode' || file.name.endsWith('.bgcode'))) {
+            if (file.name.endsWith('.nc')) {
                 try {
                     const content = await readFileContent(file);
                     setObjectsInfo(content);
                     setIsValidFile(true);
                 } catch (error) {
-                    alert('Error: Could not find or parse objects_info');
+                    alert('Error: Could not parse NC file');
                     setIsValidFile(false);
                 }
             } else {
                 setIsValidFile(false);
-                alert('Please select a .gcode or .bgcode file');
+                alert('Please select a .nc file');
             }
             setIsLoading(false);
         }
@@ -91,28 +86,15 @@ const NCInfo = () => {
         const processContent = (content) => {
             try {
                 const parsed = JSON.parse(content);
-                let allLines = [];
-                
-                parsed.objects.forEach(obj => {
-                    allLines.push(`{`);
-                    allLines.push(`  "name": "${obj.name}",`);
-                    allLines.push(`  "polygon": [`);
-                    obj.polygon.forEach((coord, index) => {
-                        const line = `    [${coord[0]}, ${coord[1]}]`;
-                        allLines.push(line);
-                    });
-                    allLines.push(`  ]`);
-                    allLines.push(`}`);
-                });
-                
-                return allLines;
+                const parsedContent = JSON.parse(parsed);
+                return parsedContent.content || [];
             } catch (error) {
                 console.error('Error processing content:', error);
-                return ['Error processing file content'];
+                return [];
             }
         };
     
-        const lines = processContent(objectsInfo);
+        const lines = processContent(objectsInfo) || [];
         const containerRef = useRef(null);
         const [containerHeight, setContainerHeight] = useState(0);
     
@@ -123,12 +105,12 @@ const NCInfo = () => {
         }, []);
     
         const Row = ({ index, style }) => {
-            const lineContent = lines[index];
+            const lineContent = lines[index] || '';
             
             const handleClick = () => {
                 navigator.clipboard.writeText(lineContent);
             };
-        
+    
             return (
                 <div
                     className="content-line"
@@ -161,7 +143,7 @@ const NCInfo = () => {
         <>
             {!isOpen && (
                 <button type="button" className="compare-button" onClick={() => setIsOpen(true)}>
-                    View G-code Objects
+                    .NC Objects
                 </button>
             )}
 
@@ -191,7 +173,7 @@ const NCInfo = () => {
                         <div className="modal-content">
                             <div className="column-container">
                                 <div className="column">
-                                    <h2 className="text-center">Original G-code</h2>
+                                    <h2 className="text-center">Original .NC</h2>
                                         <div 
                                             className={`dropzone flex flex-col items-center justify-center ${isDragging ? 'dragging' : ''}`}
                                             onDragOver={(e) => {
@@ -207,13 +189,13 @@ const NCInfo = () => {
                                                 <ContentDisplay />
                                             ) : (
                                                 <div className="text-center">
-                                                    <p>Drag and drop .gcode or .bgcode file here</p>
+                                                    <p>Drag and drop .NC file here</p>
                                                     <p>or</p>
                                                     <label className="cursor-pointer px-4 py-2 bg-[#2a2a2a] border border-[rgba(255,255,255,0.1)] rounded-lg hover:border-[#2cc51e] hover:bg-[#333333] transition-colors">
                                                         Choose File
                                                         <input
                                                             type="file"
-                                                            accept=".gcode,.bgcode"
+                                                            accept=".nc"
                                                             onChange={handleFileSelect}
                                                             className="hidden"
                                                         />
@@ -223,12 +205,12 @@ const NCInfo = () => {
                                             </div>
                                         </div>
                                         <div className="column">
-                                            <h2 className="text-center">Recompiled G-code</h2>
+                                            <h2 className="text-center">Recompiled .NC</h2>
                                             <div className="recompzone flex flex-col items-center justify-center">
                                             {isValidFile ? (
                                                 <ContentDisplay />
                                             ) : (
-                                                <p className="text-center">Waiting for G-code file...</p>
+                                                <p className="text-center">Waiting for .NC file...</p>
                                             )}
                                         </div>
                                     </div>
