@@ -1,24 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
+import { useMachine } from '../context/MachineContext';
 
 const LocationCoordinates = () => {
-    const [coordinates, setCoordinates] = useState({ x: 0, y: 0, z: 0 });
-    const [stockSize, setStockSize] = useState({ x: 100, y: 100 });
-
-    useEffect(() => {
-        // Example function to update coordinates
-        const updateCoordinates = () => {
-            setCoordinates({ 
-                x: (Math.random() * 100000).toFixed(2), 
-                y: (Math.random() * 100000).toFixed(2), 
-                z: (Math.random() * 100000).toFixed(2),
-                theta: (Math.random() * 360).toFixed(2)
-            });
-        };
-
-        const interval = setInterval(updateCoordinates, 1000);
-
-        return () => clearInterval(interval);
-    }, []);
+    const { position, setPosition, stockSize, setStockSize } = useMachine();
 
     const handleStockSizeChange = (axis, value) => {
         setStockSize(prev => ({
@@ -26,6 +10,21 @@ const LocationCoordinates = () => {
             [axis]: value
         }));
     };
+
+    // Update useEffect to use setPosition instead of local state
+    useEffect(() => {
+        const updateCoordinates = () => {
+            setPosition({ 
+                x: (Math.random() * 10000).toFixed(2), 
+                y: (Math.random() * 10000).toFixed(2), 
+                z: (Math.random() * 1000).toFixed(2),
+                theta: (Math.random() * 360).toFixed(2)
+            });
+        };
+
+        const interval = setInterval(updateCoordinates, 1000);
+        return () => clearInterval(interval);
+    }, [setPosition]);
 
     return (
         <div className="flex-block flex-column w-36 absolute bottom-10 left-10 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4 space-y-1 text-left">
@@ -55,10 +54,10 @@ const LocationCoordinates = () => {
             </div>
 
             {/* Position Display */}
-            <p>X: <span className="float-right">{coordinates.x}</span></p>
-            <p>Y: <span className="float-right">{coordinates.y}</span></p>
-            <p>Z: <span className="float-right">{coordinates.z}</span></p>
-            <p>θ: <span className="float-right">{coordinates.theta}°</span></p>
+            <p>X: <span className="float-right">{position.x}</span></p>
+            <p>Y: <span className="float-right">{position.y}</span></p>
+            <p>Z: <span className="float-right">{position.z}</span></p>
+            <p>θ: <span className="float-right">{position.theta}°</span></p>
         </div>
     );
 };
