@@ -8,9 +8,9 @@ const LocationCoordinates = () => {
         // Example function to update coordinates
         const updateCoordinates = () => {
             setCoordinates({ 
-                x: (Math.random() * 100000).toFixed(4), 
-                y: (Math.random() * 100000).toFixed(4), 
-                z: (Math.random() * 100000).toFixed(4),
+                x: (Math.random() * 100000).toFixed(2), 
+                y: (Math.random() * 100000).toFixed(2), 
+                z: (Math.random() * 100000).toFixed(2),
                 theta: (Math.random() * 360).toFixed(2)
             });
         };
