@@ -22,7 +22,7 @@ const LocationCoordinates = () => {
             });
         };
 
-        const interval = setInterval(updateCoordinates, 1000);
+        const interval = setInterval(updateCoordinates, 3000);
         return () => clearInterval(interval);
     }, [setPosition]);
 

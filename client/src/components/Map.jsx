@@ -37,7 +37,7 @@ const Map = () => {
         ctx.arc(
             PADDING + position.x * scale,
             PADDING + position.y * scale,
-            5,
+            6,
             0,
             Math.PI * 2
         );
@@ -58,24 +58,23 @@ const Map = () => {
         
         // Draw depth slider
         const sliderX = canvas.width - DEPTH_SLIDER_WIDTH;
-        const sliderHeight = canvas.height - PADDING * 2;
+        const sliderHeight = canvas.height - PADDING * 2.7;
         ctx.fillStyle = '#444';
         ctx.fillRect(sliderX, PADDING, DEPTH_SLIDER_WIDTH, sliderHeight);
         
         // Draw depth indicator
-        const depthY = PADDING + (sliderHeight * (position.z / 100)); // Assuming max Z is 100
+        const depthY = PADDING + (sliderHeight * (position.z / 1000)); // Assuming max Z is 1000mm
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(sliderX, depthY - 2, DEPTH_SLIDER_WIDTH, 4);
         
     }, [position, stockSize]);
 
     return (
-        <div className="absolute top-10 right-10 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4">
+        <div className="absolute top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4 -z-10">
             <canvas
                 ref={canvasRef}
-                width={400}
-                height={400}
-                className="bg-gray-900"
+                width={800}
+                height={800}
             />
         </div>
     );
