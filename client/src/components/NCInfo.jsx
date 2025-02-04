@@ -106,6 +106,16 @@ const NCInfo = () => {
     };
 
     const ContentDisplay = ({ listRef }) => {
+        const containerRef = useRef(null);
+        const [containerHeight, setContainerHeight] = useState(0);
+
+        // Update height when container size changes
+        useEffect(() => {
+            if (containerRef.current) {
+                setContainerHeight(containerRef.current.clientHeight);
+            }
+        }, []);
+
         // Parse objectsInfo only once
         const data = useMemo(() => {
             try {
@@ -117,24 +127,26 @@ const NCInfo = () => {
         }, [objectsInfo]);
 
         return (
-            <FixedSizeList
-                ref={listRef}
-                height={600}
-                itemCount={data.length || 0}
-                itemSize={20}
-                width="100%"
-                onScroll={handleScroll}
-                className="file-content"
-            >
-                {({ index, style }) => (
-                    <div 
-                        className="content-line"
-                        style={style}
-                    >
-                        {data[index]}
-                    </div>
-                )}
-            </FixedSizeList>
+            <div ref={containerRef} style={{ height: '100%', width: '100%' }}>
+                <FixedSizeList
+                    ref={listRef}
+                    height={containerHeight || 600} // Use container height or fallback to 600px
+                    itemCount={data.length || 0}
+                    itemSize={20}
+                    width="100%"
+                    onScroll={handleScroll}
+                    className="file-content"
+                >
+                    {({ index, style }) => (
+                        <div 
+                            className="content-line"
+                            style={style}
+                        >
+                            {data[index]}
+                        </div>
+                    )}
+                </FixedSizeList>
+            </div>
         );
     };
 
