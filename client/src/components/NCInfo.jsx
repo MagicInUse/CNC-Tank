@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { FixedSizeList } from 'react-window';
 import '../assets/filecompare.css';
 
@@ -9,17 +9,42 @@ const NCInfo = () => {
     const [isValidFile, setIsValidFile] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [opacity, setOpacity] = useState(100);
+    const [hoveredLine, setHoveredLine] = useState(null);
+    const leftListRef = useRef(null);
+    const rightListRef = useRef(null);
+    const lastScrollRef = useRef(0);
+    const isScrollingRef = useRef(false);
+
+    const handleScroll = ({ scrollOffset, scrollUpdateWasRequested }) => {
+        if (scrollUpdateWasRequested) return;
+
+        // Sync scrolling without using state
+        requestAnimationFrame(() => {
+            if (leftListRef.current) {
+                leftListRef.current.scrollTo(scrollOffset);
+            }
+            if (rightListRef.current) {
+                rightListRef.current.scrollTo(scrollOffset);
+            }
+        });
+    };
+
+    useEffect(() => {
+        return () => {
+            isScrollingRef.current = false;
+        };
+    }, []);
 
     const handleClose = () => {
         setIsOpen(false);
-        setOpacity(100); // Reset opacity when closing
+        setOpacity(100);
     };
 
     const extractObjectsInfo = (content) => {
         try {
             const lines = content.split('\n');
             return JSON.stringify({
-                content: lines
+                content: lines.filter(line => line.trim().length > 0)
             });
         } catch (error) {
             console.error('Error reading NC file:', error);
@@ -80,60 +105,46 @@ const NCInfo = () => {
         }
     };
 
-    const ContentDisplay = () => {
-        if (!objectsInfo) return null;
-    
-        const processContent = (content) => {
-            try {
-                const parsed = JSON.parse(content);
-                const parsedContent = JSON.parse(parsed);
-                return parsedContent.content || [];
-            } catch (error) {
-                console.error('Error processing content:', error);
-                return [];
-            }
-        };
-    
-        const lines = processContent(objectsInfo) || [];
+    const ContentDisplay = ({ listRef }) => {
         const containerRef = useRef(null);
         const [containerHeight, setContainerHeight] = useState(0);
-    
+
+        // Update height when container size changes
         useEffect(() => {
             if (containerRef.current) {
                 setContainerHeight(containerRef.current.clientHeight);
             }
         }, []);
-    
-        const Row = ({ index, style }) => {
-            const lineContent = lines[index] || '';
-            
-            const handleClick = () => {
-                navigator.clipboard.writeText(lineContent);
-            };
-    
-            return (
-                <div
-                    className="content-line"
-                    onClick={handleClick}
-                    onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-                    role="button"
-                    tabIndex={0}
-                    style={style}
-                >
-                    {lineContent}
-                </div>
-            );
-        };
-    
+
+        // Parse objectsInfo only once
+        const data = useMemo(() => {
+            try {
+                return JSON.parse(JSON.parse(objectsInfo)).content;
+            } catch (error) {
+                console.error('Data parsing error:', error);
+                return [];
+            }
+        }, [objectsInfo]);
+
         return (
             <div ref={containerRef} style={{ height: '100%', width: '100%' }}>
                 <FixedSizeList
-                    height={containerHeight || 400}
+                    ref={listRef}
+                    height={containerHeight || 600} // Use container height or fallback to 600px
+                    itemCount={data.length || 0}
+                    itemSize={20}
                     width="100%"
-                    itemCount={lines.length}
-                    itemSize={24}
+                    onScroll={handleScroll}
+                    className="file-content"
                 >
-                    {Row}
+                    {({ index, style }) => (
+                        <div 
+                            className="content-line"
+                            style={style}
+                        >
+                            {data[index]}
+                        </div>
+                    )}
                 </FixedSizeList>
             </div>
         );
@@ -167,7 +178,6 @@ const NCInfo = () => {
                             style={{
                                 writingMode: 'bt-lr',
                                 WebkitAppearance: 'slider-vertical',
-                                // pointerEvents: 'auto' // Keep slider interactive
                             }}
                         />
                         <div className="modal-content">
@@ -186,7 +196,7 @@ const NCInfo = () => {
                                             {isLoading ? (
                                                 <p>Loading...</p>
                                             ) : objectsInfo ? (
-                                                <ContentDisplay />
+                                                <ContentDisplay listRef={leftListRef} />
                                             ) : (
                                                 <div className="text-center">
                                                     <p>Drag and drop .NC file here</p>
@@ -207,19 +217,19 @@ const NCInfo = () => {
                                         <div className="column">
                                             <h2 className="text-center">Recompiled .NC</h2>
                                             <div className="recompzone flex flex-col items-center justify-center">
-                                            {isValidFile ? (
-                                                <ContentDisplay />
-                                            ) : (
-                                                <p className="text-center">Waiting for .NC file...</p>
-                                            )}
+                                                {isValidFile ? (
+                                                    <ContentDisplay listRef={rightListRef} />
+                                                ) : (
+                                                    <p className="text-center">Waiting for .NC file...</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
                                 <button 
                                     type="button"
                                     className="close-button w-1/2 mx-auto mb-0"
                                     onClick={handleClose}
-                                    style={{ pointerEvents: 'auto' }} // Keep button interactive
+                                    style={{ pointerEvents: 'auto' }}
                                 >
                                     Close
                                 </button>
