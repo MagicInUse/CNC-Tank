@@ -37,23 +37,39 @@ const Map = () => {
         ctx.arc(
             PADDING + position.x * scale,
             PADDING + position.y * scale,
-            6,
+            7.5, // Circle size increased from 5 to 7.5
             0,
             Math.PI * 2
         );
         ctx.fill();
         
-        // Draw direction indicator (theta)
+        // Draw direction indicator (theta) as an arrow
         ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 1.5; // Arrow thickness
         ctx.beginPath();
-        ctx.moveTo(
-            PADDING + position.x * scale,
-            PADDING + position.y * scale
-        );
+        
+        // Calculate arrow points
+        const arrowLength = 25;
+        const arrowWidth = 12;
+        const endX = PADDING + position.x * scale + Math.cos(position.theta * Math.PI / 180) * arrowLength;
+        const endY = PADDING + position.y * scale + Math.sin(position.theta * Math.PI / 180) * arrowLength;
+        const angle = position.theta * Math.PI / 180;
+
+        // Draw main line
+        ctx.moveTo(PADDING + position.x * scale, PADDING + position.y * scale);
+        ctx.lineTo(endX, endY);
+
+        // Draw arrow head
         ctx.lineTo(
-            PADDING + position.x * scale + Math.cos(position.theta * Math.PI / 180) * 20,
-            PADDING + position.y * scale + Math.sin(position.theta * Math.PI / 180) * 20
+            endX - arrowWidth * Math.cos(angle - Math.PI / 6),
+            endY - arrowWidth * Math.sin(angle - Math.PI / 6)
         );
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(
+            endX - arrowWidth * Math.cos(angle + Math.PI / 6),
+            endY - arrowWidth * Math.sin(angle + Math.PI / 6)
+        );
+
         ctx.stroke();
         
         // Draw depth slider
