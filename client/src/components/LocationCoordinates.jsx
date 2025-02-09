@@ -44,7 +44,7 @@ const LocationCoordinates = () => {
     }, [setPosition]);
 
     return (
-        <div className="flex-block flex-column w-36 absolute bottom-10 left-10 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4 space-y-1 text-left">
+        <div className="flex-block flex-column w-36 absolute z-10 bottom-10 left-10 border border-gray-400 bg-gray-950 bg-opacity-50 rounded-xl shadow-xl p-4 space-y-1 text-left">
             {/* Stock Size Inputs */}
             <div className="mb-3 border-b border-gray-400 pb-2">
                 <p className="text-sm mb-1">Stock Size (mm)</p>
