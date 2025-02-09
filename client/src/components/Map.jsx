@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useMachine } from '../context/MachineContext';
 
 const Map = () => {
@@ -10,34 +10,50 @@ const Map = () => {
     const PADDING = 40;
     const DEPTH_SLIDER_WIDTH = 30;
 
-    useEffect(() => {
+    const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Calculate scaling factors
-        const scaleX = (canvas.width - PADDING * 2 - DEPTH_SLIDER_WIDTH) / stockSize.w;
-        const scaleY = (canvas.height - PADDING * 2) / stockSize.l;
+        // Guard against invalid stock dimensions
+        if (!stockSize.w || !stockSize.l || stockSize.w <= 0 || stockSize.l <= 0) {
+            return;
+        }
+        
+        // Calculate scaling factors with minimum values
+        const scaleX = Math.max(0.1, (canvas.width - PADDING * 4 - DEPTH_SLIDER_WIDTH) / stockSize.w);
+        const scaleY = Math.max(0.1, (canvas.height - PADDING * 4) / stockSize.l);
         const scale = Math.min(scaleX, scaleY);
+        
+        // Calculate offsets to center the stock with minimum padding
+        const offsetX = Math.max(
+            PADDING,
+            (canvas.width - stockSize.w * scale - PADDING * 4 - DEPTH_SLIDER_WIDTH) / 2 + PADDING
+        );
+        const offsetY = Math.max(
+            PADDING,
+            (canvas.height - stockSize.l * scale - PADDING * 4) / 2 + PADDING
+        );
         
         // Draw stock boundary
         ctx.strokeStyle = '#666';
         ctx.lineWidth = 1;
         ctx.strokeRect(
-            PADDING,
-            PADDING,
-            stockSize.w * scale,
-            stockSize.l * scale
+            offsetX,
+            offsetY,
+            Math.max(1, stockSize.w * scale),
+            Math.max(1, stockSize.l * scale)
         );
         
+        // Robot artistic representation //
         // Draw position marker
         ctx.fillStyle = '#00ff00';
         ctx.beginPath();
         ctx.arc(
-            PADDING + position.x * scale,
-            PADDING + position.y * scale,
+            offsetX + position.x * scale,
+            offsetY + position.y * scale,
             7.5, // Circle size increased from 5 to 7.5
             0,
             Math.PI * 2
@@ -52,12 +68,12 @@ const Map = () => {
         // Calculate arrow points
         const arrowLength = 25;
         const arrowWidth = 12;
-        const endX = PADDING + position.x * scale + Math.cos(position.theta * Math.PI / 180) * arrowLength;
-        const endY = PADDING + position.y * scale + Math.sin(position.theta * Math.PI / 180) * arrowLength;
+        const endX = offsetX + position.x * scale + Math.cos(position.theta * Math.PI / 180) * arrowLength;
+        const endY = offsetY + position.y * scale + Math.sin(position.theta * Math.PI / 180) * arrowLength;
         const angle = position.theta * Math.PI / 180;
 
         // Draw main line
-        ctx.moveTo(PADDING + position.x * scale, PADDING + position.y * scale);
+        ctx.moveTo(offsetX + position.x * scale, offsetY + position.y * scale);
         ctx.lineTo(endX, endY);
 
         // Draw arrow head
@@ -73,18 +89,35 @@ const Map = () => {
 
         ctx.stroke();
         
-        // Draw depth slider
-        const sliderX = canvas.width - DEPTH_SLIDER_WIDTH;
-        const sliderHeight = canvas.height - PADDING * 2.7;
+        // Draw Z depth slider
+        const sliderX = 50 + DEPTH_SLIDER_WIDTH;
+        const sliderHeight = canvas.height - PADDING * 10;
         ctx.fillStyle = '#444';
         ctx.fillRect(sliderX, PADDING, DEPTH_SLIDER_WIDTH, sliderHeight);
         
-        // Draw depth indicator
+        // Draw Z depth indicator
         const depthY = PADDING + (sliderHeight * (position.z / 80)); // Assuming max Z is 80mm
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(sliderX, depthY - 2, DEPTH_SLIDER_WIDTH, 4);
-        
-    }, [position, stockSize, renderTrigger]);
+    }, [position, stockSize]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            const canvas = canvasRef.current;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawCanvas();
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Initial call to set canvas size
+
+        return () => window.removeEventListener('resize', handleResize);
+    }, [drawCanvas]);
+
+    useEffect(() => {
+        drawCanvas();
+    }, [position, stockSize, renderTrigger, drawCanvas]);
 
     useEffect(() => {
         // Force a re-render after the component mounts
@@ -92,11 +125,12 @@ const Map = () => {
     }, []);
 
     return (
-        <div className="absolute top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4">
+        <div className="absolute inset-0 border border-gray-400 bg-transparent shadow-xl p-4">
             <canvas
                 ref={canvasRef}
-                width={800}
-                height={800}
+                width={window.innerWidth}
+                height={window.innerHeight}
+                style={{ width: '100%', height: '100%' }}
             />
         </div>
     );
