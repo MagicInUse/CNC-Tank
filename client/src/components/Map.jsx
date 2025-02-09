@@ -80,7 +80,7 @@ const Map = () => {
         ctx.fillRect(sliderX, PADDING, DEPTH_SLIDER_WIDTH, sliderHeight);
         
         // Draw depth indicator
-        const depthY = PADDING + (sliderHeight * (position.z / 1000)); // Assuming max Z is 1000mm
+        const depthY = PADDING + (sliderHeight * (position.z / 80)); // Assuming max Z is 80mm
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(sliderX, depthY - 2, DEPTH_SLIDER_WIDTH, 4);
         
@@ -92,7 +92,7 @@ const Map = () => {
     }, []);
 
     return (
-        <div className="absolute top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4 -z-10">
+        <div className="absolute top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4">
             <canvas
                 ref={canvasRef}
                 width={800}
