@@ -1,9 +1,10 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useMachine } from '../context/MachineContext';
 
 const Map = () => {
     const canvasRef = useRef(null);
     const { position, stockSize } = useMachine();
+    const [renderTrigger, setRenderTrigger] = useState(false);
     
     // Canvas scaling constants
     const PADDING = 40;
@@ -17,8 +18,8 @@ const Map = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         // Calculate scaling factors
-        const scaleX = (canvas.width - PADDING * 2 - DEPTH_SLIDER_WIDTH) / stockSize.x;
-        const scaleY = (canvas.height - PADDING * 2) / stockSize.y;
+        const scaleX = (canvas.width - PADDING * 2 - DEPTH_SLIDER_WIDTH) / stockSize.w;
+        const scaleY = (canvas.height - PADDING * 2) / stockSize.l;
         const scale = Math.min(scaleX, scaleY);
         
         // Draw stock boundary
@@ -27,8 +28,8 @@ const Map = () => {
         ctx.strokeRect(
             PADDING,
             PADDING,
-            stockSize.x * scale,
-            stockSize.y * scale
+            stockSize.w * scale,
+            stockSize.l * scale
         );
         
         // Draw position marker
@@ -83,7 +84,12 @@ const Map = () => {
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(sliderX, depthY - 2, DEPTH_SLIDER_WIDTH, 4);
         
-    }, [position, stockSize]);
+    }, [position, stockSize, renderTrigger]);
+
+    useEffect(() => {
+        // Force a re-render after the component mounts
+        setRenderTrigger(true);
+    }, []);
 
     return (
         <div className="absolute top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4 -z-10">
