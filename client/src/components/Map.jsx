@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useMachine } from '../context/MachineContext';
 
 const Map = () => {
@@ -10,21 +10,32 @@ const Map = () => {
     const PADDING = 40;
     const DEPTH_SLIDER_WIDTH = 30;
 
-    useEffect(() => {
+    const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Calculate scaling factors
-        const scaleX = (canvas.width - PADDING * 4 - DEPTH_SLIDER_WIDTH) / stockSize.w;
-        const scaleY = (canvas.height - PADDING * 4) / stockSize.l;
+        // Guard against invalid stock dimensions
+        if (!stockSize.w || !stockSize.l || stockSize.w <= 0 || stockSize.l <= 0) {
+            return;
+        }
+        
+        // Calculate scaling factors with minimum values
+        const scaleX = Math.max(0.1, (canvas.width - PADDING * 4 - DEPTH_SLIDER_WIDTH) / stockSize.w);
+        const scaleY = Math.max(0.1, (canvas.height - PADDING * 4) / stockSize.l);
         const scale = Math.min(scaleX, scaleY);
         
-        // Calculate offsets to center the stock
-        const offsetX = (canvas.width - stockSize.w * scale - PADDING * 4 - DEPTH_SLIDER_WIDTH) / 2 + PADDING;
-        const offsetY = (canvas.height - stockSize.l * scale - PADDING * 4) / 2 + PADDING;
+        // Calculate offsets to center the stock with minimum padding
+        const offsetX = Math.max(
+            PADDING,
+            (canvas.width - stockSize.w * scale - PADDING * 4 - DEPTH_SLIDER_WIDTH) / 2 + PADDING
+        );
+        const offsetY = Math.max(
+            PADDING,
+            (canvas.height - stockSize.l * scale - PADDING * 4) / 2 + PADDING
+        );
         
         // Draw stock boundary
         ctx.strokeStyle = '#666';
@@ -32,8 +43,8 @@ const Map = () => {
         ctx.strokeRect(
             offsetX,
             offsetY,
-            stockSize.w * scale,
-            stockSize.l * scale
+            Math.max(1, stockSize.w * scale),
+            Math.max(1, stockSize.l * scale)
         );
         
         // Robot artistic representation //
@@ -88,8 +99,25 @@ const Map = () => {
         const depthY = PADDING + (sliderHeight * (position.z / 80)); // Assuming max Z is 80mm
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(sliderX, depthY - 2, DEPTH_SLIDER_WIDTH, 4);
-        
-    }, [position, stockSize, renderTrigger]);
+    }, [position, stockSize]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            const canvas = canvasRef.current;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawCanvas();
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Initial call to set canvas size
+
+        return () => window.removeEventListener('resize', handleResize);
+    }, [drawCanvas]);
+
+    useEffect(() => {
+        drawCanvas();
+    }, [position, stockSize, renderTrigger, drawCanvas]);
 
     useEffect(() => {
         // Force a re-render after the component mounts
