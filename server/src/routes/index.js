@@ -7,13 +7,4 @@ const router = express.Router();
 
 router.use('/api', apiRouter);
 
-// File upload middleware
-router.use(fileUpload());
-
-// Update routes
-router.get('/update', (req, res) => {
-    res.send('Update endpoint');
-});
-router.post('/update', handleFirmwareUpdate);
-
 export default router;

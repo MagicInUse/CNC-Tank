@@ -47,6 +47,8 @@ const char* ssid = "";
 const char* password = "";
 const char* host = "cnc-tank"; // Change this to your desired hostname
 
+#define FIRMWARE_VERSION "1.0.02"  // Add version tracking
+
 // HTML for the update page - this will be for direct updates, not through the tunnel service
 const char* serverIndex = R"(
 <!DOCTYPE html>
@@ -63,7 +65,14 @@ const char* serverIndex = R"(
 
 // Endpoint handlers
 void handleTestData() {
-    server.send(200, "application/json", "{\"temperature\": 25, \"humidity\": 60}");
+    StaticJsonDocument<200> doc;
+    doc["temperature"] = 69;
+    doc["humidity"] = 33;
+    doc["firmware_version"] = FIRMWARE_VERSION;  // Add this line
+    
+    String response;
+    serializeJson(doc, response);
+    server.send(200, "application/json", response);
 }
 
 void handleStatus() {
@@ -130,23 +139,30 @@ void handleUpdateDone() {
     ESP.restart();
 }
 
+// Modify the handleUpdateUpload function
 void handleUpdateUpload() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
         Serial.printf("Update: %s\n", upload.filename.c_str());
         if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
             Update.printError(Serial);
+            return;
         }
     } else if (upload.status == UPLOAD_FILE_WRITE) {
         if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
             Update.printError(Serial);
+            return;
         }
+        Serial.printf("Progress: %u/%u bytes\n", upload.totalSize, UPDATE_SIZE_UNKNOWN);
     } else if (upload.status == UPLOAD_FILE_END) {
         if (Update.end(true)) {
             Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
         } else {
             Update.printError(Serial);
         }
+    } else if (upload.status == UPLOAD_FILE_ABORTED) {
+        Update.end();
+        Serial.println("Update aborted");
     }
 }
 
@@ -156,19 +172,37 @@ void handleTunnelUpdate() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
         Serial.printf("Tunnel Update: %s\n", upload.filename.c_str());
+        
+        // Validate file name ends with .bin
+        if (!upload.filename.endsWith(".bin")) {
+            Serial.println("Invalid file type");
+            return;
+        }
+        
         if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
             Update.printError(Serial);
+            return;
         }
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
+        
+        Serial.println("Update started");
+    } 
+    else if (upload.status == UPLOAD_FILE_WRITE) {
         if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
             Update.printError(Serial);
+            return;
         }
-    } else if (upload.status == UPLOAD_FILE_END) {
+        Serial.printf("Progress: %u bytes\n", upload.totalSize);
+    } 
+    else if (upload.status == UPLOAD_FILE_END) {
         if (Update.end(true)) {
-            Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+            Serial.printf("Update Success: %u bytes\nRebooting...\n", upload.totalSize);
         } else {
             Update.printError(Serial);
         }
+    }
+    else if (upload.status == UPLOAD_FILE_ABORTED) {
+        Update.end();
+        Serial.println("Update aborted");
     }
 }
 
@@ -259,12 +293,44 @@ void setup() {
     server.on("/api/test-data", HTTP_GET, handleTestData);
     server.on("/api/control", HTTP_POST, handleControl);
     
-    // OTA Update endpoints
+    // OTA Update endpoints - direct browser update
     server.on("/update", HTTP_GET, handleUpdate);
-    server.on("/update", HTTP_POST, handleUpdateDone, handleUpdateUpload);
-    // OTA Tunnel endpoints
-    server.on("/api/update", HTTP_GET, handleTunnelUpdateStatus);
-    server.on("/api/update", HTTP_POST, handleUpdateDone, handleTunnelUpdate);
+    server.on("/update", HTTP_POST, []() {
+        server.sendHeader("Connection", "close");
+        server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+        delay(1000);
+        ESP.restart();
+    }, handleUpdateUpload);
+
+    // OTA Tunnel endpoints - via React frontend
+    server.on("/api/update", HTTP_GET, []() {
+        StaticJsonDocument<200> response;
+        response["version"] = FIRMWARE_VERSION;
+        response["status"] = "ready";
+        response["free_space"] = ESP.getFreeSketchSpace();
+        
+        String responseStr;
+        serializeJson(response, responseStr);
+        server.send(200, "application/json", responseStr);
+    });
+
+    server.on("/api/update", HTTP_POST, []() {
+        server.sendHeader("Connection", "close");
+        
+        StaticJsonDocument<200> response;
+        response["success"] = !Update.hasError();
+        response["message"] = Update.hasError() ? "Update failed" : "Update successful";
+        
+        String responseStr;
+        serializeJson(response, responseStr);
+        
+        server.send(200, "application/json", responseStr);
+        
+        if (!Update.hasError()) {
+            delay(500);  // Give time for response to be sent
+            ESP.restart();
+        }
+    }, handleTunnelUpdate);
 
     
     server.begin();
@@ -274,12 +340,12 @@ void setup() {
     Serial.printf("OTA Updates available at http://%s.local/update\n", host);
 
     //Small demo to see if anything can be done.
-    zStepper->moveTo(500, true);
-    zStepper->moveTo(0, true);
-    leftStepper->moveTo(500, true);
-    leftStepper->moveTo(0, true);
-    rightStepper->moveTo(500, true);
-    rightStepper->moveTo(0, true);
+    // zStepper->moveTo(500, true);
+    // zStepper->moveTo(0, true);
+    // leftStepper->moveTo(500, true);
+    // leftStepper->moveTo(0, true);
+    // rightStepper->moveTo(500, true);
+    // rightStepper->moveTo(0, true);
 }
 
 // Main Loop

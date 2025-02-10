@@ -1,10 +1,14 @@
 import express from 'express';
 import controlRouter from './control/index.js';
 import statusRouter from './status/index.js';
+import updateRouter from './update/index.js';
+import configRouter from './config/index.js';
 
-const router = express.Router();
+const apiRouter = express.Router();
 
-router.use('/control', controlRouter);
-router.use('/status', statusRouter);
+apiRouter.use('/config', configRouter);
+apiRouter.use('/control', controlRouter);
+apiRouter.use('/status', statusRouter);
+apiRouter.use('/update', updateRouter);
 
-export default router;
+export default apiRouter;

@@ -78,10 +78,22 @@ const ConfigMenu = () => {
         return formattedOctets.join('.');
     };
     
-    const handleIPChange = (e) => {
+    const handleIPChange = async (e) => {
         const formatted = formatIP(e.target.value);
         setIpAddress(formatted);
-        setIsValid(validateIP(formatted));
+        const valid = validateIP(formatted);
+        setIsValid(valid);
+
+        if (valid) {
+            try {
+                // Update the ESP32 IP address on the server
+                await axios.post('http://localhost:3001/api/config/esp32', {
+                    ipAddress: formatted
+                });
+            } catch (error) {
+                logError(`Failed to update ESP32 IP: ${error.message}`);
+            }
+        }
     }
     
     const validateIP = (ip) => {
