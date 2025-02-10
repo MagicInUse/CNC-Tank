@@ -6,13 +6,13 @@
 #include "FastAccelStepper.h" //Jochen's library
 
 //Stepper hardware control pins
-#define rightStepperEnb 19
-#define rightStepperStep 18
-#define rightStepperDir 23
+#define rightStepperEnb 26
+#define rightStepperStep 27
+#define rightStepperDir 13
 //
-#define leftStepperStepperEnb 19
-#define leftStepperStep 18
-#define leftStepperDir 23
+#define leftStepperEnb 25
+#define leftStepperStep 32
+#define leftStepperDir 33
 //
 #define zStepperEnb 19
 #define zStepperStep 18
@@ -31,6 +31,12 @@
 
 //Accesories (I2C or other Options)
 #define laser 4
+
+//AccelStepper setup
+FastAccelStepperEngine engine = FastAccelStepperEngine();
+FastAccelStepper *zStepper = NULL;
+FastAccelStepper *rightStepper = NULL;
+FastAccelStepper *leftStepper = NULL;
 
 //TO-DO Add GRBL global variable here. Consider making these changeable/readable by the webpage.
 
@@ -161,7 +167,53 @@ void setup() {
     digitalWrite(laser, 0);
     
     // For tethered debugging
-    Serial.begin(115200); 
+    Serial.begin(115200);
+
+    //Setup steppers
+    engine.init();
+    zStepper = engine.stepperConnectToPin(zStepperStep);
+    rightStepper = engine.stepperConnectToPin(rightStepperStep);
+    leftStepper = engine.stepperConnectToPin(leftStepperStep);
+    if(zStepper && rightStepper && leftStepper){
+      Serial.println("Steppers set");
+      zStepper->setDirectionPin(zStepperDir);
+      zStepper->setEnablePin(zStepperEnb);
+      zStepper->setAutoEnable(true);
+      zStepper->setSpeedInUs(5000);
+      zStepper->setAcceleration(1000);
+      //
+      rightStepper->setDirectionPin(rightStepperDir);
+      rightStepper->setEnablePin(rightStepperEnb);
+      rightStepper->setAutoEnable(true);
+      rightStepper->setSpeedInUs(5000);
+      rightStepper->setAcceleration(1000);
+      //
+      leftStepper->setDirectionPin(leftStepperDir);
+      leftStepper->setEnablePin(leftStepperEnb);
+      leftStepper->setAutoEnable(true);
+      leftStepper->setSpeedInUs(5000);
+      leftStepper->setAcceleration(1000);
+    }else{
+      Serial.println("One or more steppers failed to Initilize.");
+      Serial.print("Z Stepper:");
+      if(zStepper){
+        Serial.println(1);
+      }else{
+        Serial.println(0);
+      }
+      Serial.print("Right Stepper:");
+      if(rightStepper){
+        Serial.println(1);
+      }else{
+        Serial.println(0);
+      }
+      Serial.print("Left Stepper:");
+      if(leftStepper){
+        Serial.println(1);
+      }else{
+        Serial.println(0);
+      }
+    }
 
     WiFi.mode(WIFI_AP_STA);
     WiFi.begin(ssid, password);
@@ -190,6 +242,14 @@ void setup() {
     
     Serial.println("Server started on host: " + WiFi.localIP().toString());
     Serial.printf("OTA Updates available at http://%s.local/update\n", host);
+
+    //Small demo to see if anything can be done.
+    zStepper->moveTo(500, true);
+    zStepper->moveTo(0, true);
+    leftStepper->moveTo(500, true);
+    leftStepper->moveTo(0, true);
+    rightStepper->moveTo(500, true);
+    rightStepper->moveTo(0, true);
 }
 
 // Main Loop
