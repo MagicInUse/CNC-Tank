@@ -14,7 +14,7 @@ const OTAU = () => {
     const handleSubmit = async (event) => {
         event.preventDefault();
         setIsUploading(true);
-        setStatus('Uploading firmware... This may take up to 30 seconds.');
+        setStatus('Checking update status...');
 
         if (!file) {
             setStatus('Please select a firmware file');
@@ -22,11 +22,24 @@ const OTAU = () => {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('firmware', file, file.name);
+        if (!file.name.endsWith('.bin')) {
+            setStatus('Error: Only .bin files are allowed');
+            setIsUploading(false);
+            return;
+        }
 
         try {
-            const response = await axios.post('http://localhost:3001/update', formData, {
+            // First check if device is ready for update
+            const statusCheck = await axios.get('http://localhost:3001/api/update');
+            if (!statusCheck.data.status === 'ready') {
+                throw new Error('Device not ready for update');
+            }
+
+            setStatus('Uploading firmware... This may take up to 30 seconds.');
+            const formData = new FormData();
+            formData.append('firmware', file, file.name);
+
+            const response = await axios.post('http://localhost:3001/api/update', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 },
@@ -34,26 +47,19 @@ const OTAU = () => {
                     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                     setStatus(`Uploading: ${percentCompleted}%`);
                 },
-                timeout: 30000,
-                maxContentLength: Infinity,
-                maxBodyLength: Infinity
+                timeout: 30000
             });
             
-            // Clear the file input
-            setFile(null);
-            event.target.reset();
-
-            let countdown = 3;
-            const countdownInterval = setInterval(() => {
-                setStatus(`Firmware update successful! Redirecting in ${countdown} seconds...`);
-                countdown -= 1;
-                if (countdown < 0) {
-                    clearInterval(countdownInterval);
+            if (response.data.success) {
+                setStatus('Update successful! Device is rebooting...');
+                setTimeout(() => {
                     window.location.href = '/';
-                }
-            }, 1000);
+                }, 5000);
+            } else {
+                throw new Error(response.data.message);
+            }
         } catch (error) {
-            const errorMessage = error.response?.data?.error || error.message;
+            const errorMessage = error.response?.data?.message || error.message;
             setStatus(`Error: ${errorMessage}`);
         } finally {
             setIsUploading(false);
