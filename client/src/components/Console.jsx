@@ -18,7 +18,7 @@ const Console = () => {
     }, [messages]);
 
     return (
-        <div className={`fixed bottom-64 right-10 console ${isExpanded ? 'h-1/2' : 'h-64'} border border-gray-400 bg-black bg-opacity-75 rounded-lg overflow-hidden`}>
+        <div className={`fixed bottom-64 right-10 z-10 console ${isExpanded ? 'h-1/2' : 'h-64'} border border-gray-400 bg-black bg-opacity-75 rounded-lg overflow-hidden`}>
             <div className="flex flex-col h-full relative">
                 {/* Expand/Collapse Button */}
                 <button 

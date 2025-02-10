@@ -1,6 +1,8 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h> //Benoit's library
+#include <ESPmDNS.h>
+#include <Update.h>
 #include "FastAccelStepper.h" //Jochen's library
 
 //Stepper hardware control pins
@@ -37,6 +39,21 @@ WebServer server(80);
 // TODO: Replace with your credentials
 const char* ssid = "";
 const char* password = "";
+const char* host = "cnc-tank"; // Change this to your desired hostname
+
+// HTML for the update page - this will be for direct updates, not through the tunnel service
+const char* serverIndex = R"(
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>CNC Tank Firmware Update</h2>
+    <form method='POST' action='/update' enctype='multipart/form-data'>
+        <input type='file' name='update'>
+        <input type='submit' value='Update Firmware'>
+    </form>
+</body>
+</html>
+)";
 
 // Endpoint handlers
 void handleTestData() {
@@ -95,6 +112,8 @@ void handleControl() {
     server.send(200, "application/json", responseStr);
 }
 
+
+
 // Main Setup
 void setup() {
     //Pin modes. Will need any "extras" added in later
@@ -114,18 +133,33 @@ void setup() {
     // For tethered debugging
     Serial.begin(115200); 
 
+    WiFi.mode(WIFI_AP_STA);
     WiFi.begin(ssid, password);
+    
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
     }
     Serial.println("Connected!");
 
+    // Initialize mDNS
+    if (MDNS.begin(host)) {
+        Serial.println("mDNS responder started");
+    }
+
     // Endpoint Initialization
     server.on("/api/status", HTTP_GET, handleStatus);
     server.on("/api/test-data", HTTP_GET, handleTestData);
     server.on("/api/control", HTTP_POST, handleControl);
+    
+    // OTA Update endpoints
+    server.on("/update", HTTP_GET, handleUpdate);
+    server.on("/update", HTTP_POST, handleUpdateDone, handleUpdateUpload);
+    
     server.begin();
+    MDNS.addService("http", "tcp", 80);
+    
     Serial.println("Server started on host: " + WiFi.localIP().toString());
+    Serial.printf("OTA Updates available at http://%s.local/update\n", host);
 }
 
 // Main Loop

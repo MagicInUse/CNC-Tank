@@ -1,32 +1,75 @@
 import React, { useEffect, useState } from "react";
 import { useMachine } from '../context/MachineContext';
+// import { useConsoleLog } from '../utils/ConsoleLog';
 
 const LocationCoordinates = () => {
     const { position, setPosition, stockSize, setStockSize } = useMachine();
-    const [tempStockSize, setTempStockSize] = useState(stockSize);
+    // const { logResponse, logError } = useConsoleLog();
+
+    // Initialize tempStockSize without logging during render
+    const [tempStockSize, setTempStockSize] = useState({
+        w: stockSize.w,
+        l: stockSize.l,
+        t: stockSize.t
+    });
+
+    // Log initial values after mount
+    useEffect(() => {
+        // logResponse(`LocationCoordinates initialized with tempStockSize: ${JSON.stringify(tempStockSize)}`);
+    }, []);
+
+    // Sync tempStockSize when stockSize changes
+    useEffect(() => {
+        setTempStockSize(stockSize);
+        // logResponse(`stockSize sync - new values: ${JSON.stringify(stockSize)}`);
+    }, [stockSize]);
 
     const handleStockSizeChange = (axis, value) => {
-        setTempStockSize(prev => ({
-            ...prev,
-            [axis]: value
-        }));
+        const numValue = Number(value);
+        
+        setTempStockSize(prev => {
+            const newValue = isNaN(numValue) ? prev[axis] : numValue;
+            const newState = {
+                ...prev,
+                [axis]: newValue
+            };
+            // Promise.resolve().then(() => {
+            //     logResponse(`tempStockSize updated: ${JSON.stringify(newState)}`);
+            // });
+            return newState;
+        });
     };
 
     const handleStockSizeBlur = (axis) => {
-        const limits = {
-            w: [300, 2690],
-            l: [300, 2690],
-            t: [1, 80]
+        // Promise.resolve().then(() => {
+        //     logResponse(`handleStockSizeBlur - axis: ${axis}`);
+        //     logResponse(`current values - temp: ${JSON.stringify(tempStockSize)}, stock: ${JSON.stringify(stockSize)}`);
+        // });
+
+        const currentValue = Number(tempStockSize[axis]);
+
+        if (isNaN(currentValue)) {
+            // Promise.resolve().then(() => {
+            //     logError(`Invalid value for ${axis}, using fallback: ${stockSize[axis]}`);
+            // });
+            setTempStockSize(prev => ({
+                ...prev,
+                [axis]: stockSize[axis]
+            }));
+            return;
+        }
+
+        const newStockSize = {
+            ...stockSize,
+            [axis]: currentValue
         };
-        const limitedValue = Math.max(limits[axis][0], Math.min(limits[axis][1], tempStockSize[axis]));
-        setTempStockSize(prev => ({
-            ...prev,
-            [axis]: limitedValue
-        }));
-        setStockSize(prev => ({
-            ...prev,
-            [axis]: limitedValue
-        }));
+
+        setStockSize(newStockSize);
+        setTempStockSize(newStockSize);
+
+        // Promise.resolve().then(() => {
+        //     logResponse(`Stock size updated - axis: ${axis}, value: ${currentValue}`);
+        // });
     };
 
     useEffect(() => {
@@ -44,7 +87,7 @@ const LocationCoordinates = () => {
     }, [setPosition]);
 
     return (
-        <div className="flex-block flex-column w-36 absolute bottom-10 left-10 border border-gray-400 bg-black bg-opacity-50 rounded-xl shadow-xl p-4 space-y-1 text-left">
+        <div className="flex-block flex-column w-36 absolute z-10 bottom-10 left-10 border border-gray-400 bg-gray-950 bg-opacity-50 rounded-xl shadow-xl p-4 space-y-1 text-left">
             {/* Stock Size Inputs */}
             <div className="mb-3 border-b border-gray-400 pb-2">
                 <p className="text-sm mb-1">Stock Size (mm)</p>
