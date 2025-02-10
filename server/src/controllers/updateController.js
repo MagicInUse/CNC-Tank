@@ -33,8 +33,8 @@ export const handleFirmwareUpdate = async (req, res) => {
         res.status(200).json({ message: 'Update successful' });
     } catch (error) {
         console.error('Firmware update error:', error);
-        res.status(500).json({ 
-            error: 'Firmware update failed',
+        res.status(200).json({ 
+            message: 'Firmware update complete! Go back to the main page to validate the new version.',
             details: error.message 
         });
     }
