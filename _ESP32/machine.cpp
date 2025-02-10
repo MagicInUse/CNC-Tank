@@ -1,6 +1,8 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h> //Benoit's library
+#include <ESPmDNS.h>
+#include <Update.h>
 
 #define stepPin 23
 #define dirPin 22
@@ -16,6 +18,21 @@ WebServer server(80);
 // TODO: Replace with your credentials
 const char* ssid = "";
 const char* password = "";
+const char* host = "cnc-tank"; // Change this to your desired hostname
+
+// HTML for the update page - this will be for direct updates, not through the tunnel service
+const char* serverIndex = R"(
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>CNC Tank Firmware Update</h2>
+    <form method='POST' action='/update' enctype='multipart/form-data'>
+        <input type='file' name='update'>
+        <input type='submit' value='Update Firmware'>
+    </form>
+</body>
+</html>
+)";
 
 // Endpoint handlers
 void handleTestData() {
@@ -103,6 +120,38 @@ void zMove(int step, int speed, String rev){
   digitalWrite(enb, HIGH);//Disable stepper.
 }
 
+// OTA update handlers
+void handleUpdate() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/html", serverIndex);
+}
+
+void handleUpdateDone() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    ESP.restart();
+}
+
+void handleUpdateUpload() {
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+        Serial.printf("Update: %s\n", upload.filename.c_str());
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+            Update.printError(Serial);
+        }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+        if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+            Update.printError(Serial);
+        }
+    } else if (upload.status == UPLOAD_FILE_END) {
+        if (Update.end(true)) {
+            Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+        } else {
+            Update.printError(Serial);
+        }
+    }
+}
+
 // Main Setup
 void setup() {
     //All pin modes are outputs.
@@ -116,18 +165,33 @@ void setup() {
     // For tethered debugging
     Serial.begin(115200); 
 
+    WiFi.mode(WIFI_AP_STA);
     WiFi.begin(ssid, password);
+    
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
     }
     Serial.println("Connected!");
 
+    // Initialize mDNS
+    if (MDNS.begin(host)) {
+        Serial.println("mDNS responder started");
+    }
+
     // Endpoint Initialization
     server.on("/api/status", HTTP_GET, handleStatus);
     server.on("/api/test-data", HTTP_GET, handleTestData);
     server.on("/api/control", HTTP_POST, handleControl);
+    
+    // OTA Update endpoints
+    server.on("/update", HTTP_GET, handleUpdate);
+    server.on("/update", HTTP_POST, handleUpdateDone, handleUpdateUpload);
+    
     server.begin();
+    MDNS.addService("http", "tcp", 80);
+    
     Serial.println("Server started on host: " + WiFi.localIP().toString());
+    Serial.printf("OTA Updates available at http://%s.local/update\n", host);
 }
 
 // Main Loop
