@@ -38,12 +38,20 @@ const OTAU = () => {
                 maxContentLength: Infinity,
                 maxBodyLength: Infinity
             });
-
-            setStatus('Firmware update successful! The ESP32 will restart shortly.');
             
             // Clear the file input
             setFile(null);
             event.target.reset();
+
+            let countdown = 3;
+            const countdownInterval = setInterval(() => {
+                setStatus(`Firmware update successful! Redirecting in ${countdown} seconds...`);
+                countdown -= 1;
+                if (countdown < 0) {
+                    clearInterval(countdownInterval);
+                    window.location.href = '/';
+                }
+            }, 1000);
         } catch (error) {
             const errorMessage = error.response?.data?.error || error.message;
             setStatus(`Error: ${errorMessage}`);
