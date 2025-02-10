@@ -150,6 +150,32 @@ void handleUpdateUpload() {
     }
 }
 
+// OTA tunnel update handlers
+
+void handleTunnelUpdate() {
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+        Serial.printf("Tunnel Update: %s\n", upload.filename.c_str());
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+            Update.printError(Serial);
+        }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+        if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+            Update.printError(Serial);
+        }
+    } else if (upload.status == UPLOAD_FILE_END) {
+        if (Update.end(true)) {
+            Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+        } else {
+            Update.printError(Serial);
+        }
+    }
+}
+
+void handleTunnelUpdateStatus() {
+    server.send(200, "text/plain", "Ready for update");
+}
+
 // Main Setup
 void setup() {
     //Pin modes. Will need any "extras" added in later
@@ -236,6 +262,10 @@ void setup() {
     // OTA Update endpoints
     server.on("/update", HTTP_GET, handleUpdate);
     server.on("/update", HTTP_POST, handleUpdateDone, handleUpdateUpload);
+    // OTA Tunnel endpoints
+    server.on("/api/update", HTTP_GET, handleTunnelUpdateStatus);
+    server.on("/api/update", HTTP_POST, handleUpdateDone, handleTunnelUpdate);
+
     
     server.begin();
     MDNS.addService("http", "tcp", 80);
