@@ -1,15 +1,36 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h> //Benoit's library
+#include "FastAccelStepper.h" //Jochen's library
 
-#define stepPin 23
-#define dirPin 22
-#define enb 27
-#define stepsMM 10
+//Stepper hardware control pins
+#define rightStepperEnb 19
+#define rightStepperStep 18
+#define rightStepperDir 23
+//
+#define leftStepperStepperEnb 19
+#define leftStepperStep 18
+#define leftStepperDir 23
+//
+#define zStepperEnb 19
+#define zStepperStep 18
+#define zStepperDir 23
 
-//Number of desired full revolutions. Negative will reverse direction.
-int numRev = 0;
-bool revDir = 0;
+//Z-Probe and upper limit switch.
+#define zEndStop 35
+#define zProbe 34
+
+//Relay controls
+#define spindleEnb 16
+#define outletEnb 17
+
+//Spindle PWM pin
+#define spindlePWM 2
+
+//Accesories (I2C or other Options)
+#define laser 4
+
+//TO-DO Add GRBL global variable here. Consider making these changeable/readable by the webpage.
 
 WebServer server(80);
 
@@ -64,17 +85,6 @@ void handleControl() {
     Serial.println("Direction: " + direction);
     Serial.println("Speed: " + String(speed));
     Serial.println("Step: " + String(step));
-
-    if (axis == "z" && direction == "up") {
-        zMove(step, speed, direction);
-    }
-    else if (axis == "z" && direction == "down") {
-        zMove(step, speed, direction);
-    }
-    else {
-        server.send(400, "application/json", "{\"error\": \"Invalid axis or direction\"}");
-        return;
-    }
     
     StaticJsonDocument<200> response;
     response["status"] = "success";
@@ -85,34 +95,22 @@ void handleControl() {
     server.send(200, "application/json", responseStr);
 }
 
-//TO-DO get direction reveresed/not reveresed as bool
-//Function takes the distance desired "step" multiplies it be the step per mm, and delays "speed" #ms between steps. And a string of up/down
-void zMove(int step, int speed, String rev){
-  digitalWrite(enb, LOW);//Enable stepper
-  if(rev == "up"){
-    digitalWrite(dirPin, LOW);
-  }else{
-    digitalWrite(dirPin, HIGH);
-  }
-  for(int i = 0; i <= step * stepsMM; i++){
-    digitalWrite(stepPin, HIGH);
-    delay(speed);
-    digitalWrite(stepPin, LOW);
-    delay(speed);
-  }
-  digitalWrite(enb, HIGH);//Disable stepper.
-}
-
 // Main Setup
 void setup() {
-    //All pin modes are outputs.
-    pinMode(stepPin, OUTPUT);
-    pinMode(dirPin, OUTPUT);
-    pinMode(enb, OUTPUT);
-    
-    //Disable stepper(s) at start up.
-    digitalWrite(enb, HIGH);
+    //Pin modes. Will need any "extras" added in later
+    pinMode(spindleEnb, OUTPUT);
+    pinMode(spindlePWM, OUTPUT);//Will need to be configured with proper frequency and resolution.
+    pinMode(outletEnb, OUTPUT);
+    pinMode(laser, OUTPUT);
+    pinMode(zEndStop, INPUT);//10k Pullup on board. This pin is input only.
+    pinMode(zProbe, INPUT);//"
 
+    //Immediately take all outputs low.
+    digitalWrite(spindleEnb, 0);
+    digitalWrite(spindlePWM, 0);
+    digitalWrite(outletEnb, 0);
+    digitalWrite(laser, 0);
+    
     // For tethered debugging
     Serial.begin(115200); 
 
