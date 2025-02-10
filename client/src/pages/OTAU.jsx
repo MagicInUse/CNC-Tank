@@ -34,7 +34,7 @@ const OTAU = () => {
                     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                     setStatus(`Uploading: ${percentCompleted}%`);
                 },
-                timeout: 30000, // 30 seconds
+                timeout: 30000,
                 maxContentLength: Infinity,
                 maxBodyLength: Infinity
             });
@@ -70,7 +70,7 @@ const OTAU = () => {
                     className={`text-white px-4 py-2 rounded ${
                         isUploading || !file
                             ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-blue-500 hover:bg-blue-600'
+                            : 'bg-green-500 hover:bg-green-600'
                     }`}
                     disabled={isUploading || !file}
                 >
@@ -78,7 +78,7 @@ const OTAU = () => {
                 </button>
                 {status && (
                     <div className={`mt-4 p-2 border rounded ${
-                        status.includes('Error') ? 'bg-red-900' : 'bg-blue-900'
+                        status.includes('Error') ? 'bg-red-900' : 'bg-green-700'
                     }`}>
                         {status}
                     </div>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { ESP32_BASE_URL } from '../config/esp32.js';
-import FormData from 'form-data';  // Add this import
+import FormData from 'form-data';
 
 export const handleFirmwareUpdate = async (req, res) => {
     try {
@@ -32,7 +32,6 @@ export const handleFirmwareUpdate = async (req, res) => {
 
         res.status(200).json({ message: 'Update successful' });
     } catch (error) {
-        console.error('Firmware update error:', error);
         res.status(200).json({ 
             message: 'Firmware update complete! Go back to the main page to validate the new version.',
             details: error.message 
