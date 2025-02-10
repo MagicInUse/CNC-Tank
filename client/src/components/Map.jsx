@@ -1,12 +1,11 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { useMachine } from '../context/MachineContext';
-// import { useConsoleLog } from '../utils/ConsoleLog';
 
 const Map = () => {
     const canvasRef = useRef(null);
     const { position, stockSize } = useMachine();
-    const [renderTrigger, setRenderTrigger] = useState(false);
-    // const { logResponse, logError } = useConsoleLog();
+    const requestRef = useRef();
+    const previousTimeRef = useRef();
     
     // Canvas scaling constants
     const PADDING = 40;
@@ -14,59 +13,48 @@ const Map = () => {
 
     const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
+        if (!canvas) return;  // Guard against null canvas
         
-        // logResponse('Canvas render started');
-        // logResponse(`Current stock size: ${JSON.stringify(stockSize)}`);
-        // logResponse(`Current position: ${JSON.stringify(position)}`);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;     // Guard against null context
         
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // logResponse(`Canvas dimensions: ${canvas.width}x${canvas.height}`);
         
         // Guard against invalid stock dimensions
-        if (!stockSize.w || !stockSize.l || stockSize.w <= 0 || stockSize.l <= 0) {
-            // logError('Invalid stock dimensions, skipping render');
+        if (!stockSize?.w || !stockSize?.l || stockSize.w <= 0 || stockSize.l <= 0) {
             return;
         }
 
         // Calculate available space
         const availableWidth = canvas.width - (PADDING * 4) - DEPTH_SLIDER_WIDTH;
         const availableHeight = canvas.height - (PADDING * 4);
-        // logResponse(`Available space: ${availableWidth}x${availableHeight}`);
 
         // Calculate aspect ratios
         const stockAspectRatio = stockSize.w / stockSize.l;
         const canvasAspectRatio = availableWidth / availableHeight;
-        // logResponse(`Aspect ratios - Stock: ${stockAspectRatio.toFixed(2)}, Canvas: ${canvasAspectRatio.toFixed(2)}`);
 
         // Determine scale based on aspect ratio comparison
         let scale;
         if (stockAspectRatio > canvasAspectRatio) {
             scale = availableWidth / stockSize.w;
-            // logResponse('Using width-based scaling');
         } else {
             scale = availableHeight / stockSize.l;
-            // logResponse('Using height-based scaling');
         }
 
         // Apply minimum scale to ensure visibility
         scale = Math.max(0.1, Math.min(scale, 10));
-        // logResponse(`Applied scale factor: ${scale.toFixed(3)}`);
 
         // Calculate centered position
         const scaledStockWidth = stockSize.w * scale;
         const scaledStockHeight = stockSize.l * scale;
-        // logResponse(`Scaled dimensions: ${scaledStockWidth.toFixed(1)}x${scaledStockHeight.toFixed(1)}`);
         
         const offsetX = (canvas.width - DEPTH_SLIDER_WIDTH - scaledStockWidth) / 2;
         const offsetY = (canvas.height - scaledStockHeight) / 2;
-        // logResponse(`Canvas offsets: X=${offsetX.toFixed(1)}, Y=${offsetY.toFixed(1)}`);
 
         // Draw stock boundary with minimum size
         const finalStockWidth = Math.max(10, scaledStockWidth);
         const finalStockHeight = Math.max(10, scaledStockHeight);
-        // logResponse(`Final stock render dimensions: ${finalStockWidth.toFixed(1)}x${finalStockHeight.toFixed(1)}`);
 
         try {
             // Draw stock boundary
@@ -77,7 +65,6 @@ const Map = () => {
             // Draw position marker
             const markerX = offsetX + (position.x * scale);
             const markerY = offsetY + (position.y * scale);
-            // logResponse(`Marker position: X=${markerX.toFixed(1)}, Y=${markerY.toFixed(1)}`);
 
             // Draw position marker with fixed size
             const markerSize = 7.5;
@@ -133,42 +120,56 @@ const Map = () => {
             ctx.fillStyle = '#00ff00';
             ctx.fillRect(sliderX, depthY - 2, DEPTH_SLIDER_WIDTH, 4);
 
-            // logResponse('Canvas render completed successfully');
         } catch (error) {
-            // logError(`Canvas render error: ${error.message}`);
+            console.error(`Canvas render error: ${error.message}`);
         }
 
-    }, [position, stockSize]);
+    }, [position?.x, position?.y, position?.z, position?.theta, stockSize?.w, stockSize?.l]);
 
-    useEffect(() => {
-        const handleResize = () => {
-            const canvas = canvasRef.current;
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+    const animate = useCallback((time) => {
+        if (previousTimeRef.current !== undefined) {
             drawCanvas();
-        };
-
-        window.addEventListener('resize', handleResize);
-        handleResize(); // Initial call to set canvas size
-
-        return () => window.removeEventListener('resize', handleResize);
+        }
+        previousTimeRef.current = time;
+        requestRef.current = requestAnimationFrame(animate);
     }, [drawCanvas]);
 
     useEffect(() => {
-        drawCanvas();
-    }, [position, stockSize, renderTrigger, drawCanvas]);
+        requestRef.current = requestAnimationFrame(animate);
+        return () => {
+            if (requestRef.current) {
+                cancelAnimationFrame(requestRef.current);
+            }
+        };
+    }, [animate]);
 
-    useEffect(() => {
-        // Force a re-render after the component mounts
-        setRenderTrigger(true);
+    // Separate resize handler from render cycle
+    const handleResize = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        // Get the container dimensions
+        const container = canvas.parentElement;
+        if (!container) return;
+
+        const { width, height } = container.getBoundingClientRect();
+        
+        // Set canvas size to match container
+        canvas.width = width;
+        canvas.height = height;
     }, []);
+
+    // Handle resize events
+    useEffect(() => {
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [handleResize]);
 
     return (
         <div className="absolute inset-0 border border-gray-400 bg-transparent shadow-xl p-4">
             <canvas
                 ref={canvasRef}
-                width={window.innerWidth}
-                height={window.innerHeight}
                 style={{ width: '100%', height: '100%' }}
             />
         </div>
