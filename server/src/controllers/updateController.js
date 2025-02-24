@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ESP32_BASE_URL, getESP32FreeSpace } from '../config/esp32.js';
+import { ESP32_BASE_URL } from '../config/esp32.js';
 import FormData from 'form-data';
 
 export const checkUpdateStatus = async (req, res) => {
@@ -28,8 +28,11 @@ export const handleFirmwareUpdate = async (req, res) => {
             return res.status(400).json({ error: 'Invalid file type. Only .bin files are allowed' });
         }
 
-        // Use the getESP32FreeSpace function instead of ESP global
-        if (firmwareFile.size > getESP32FreeSpace()) {
+        // Fetch free space from ESP32
+        const updateStatusResponse = await axios.get(`${ESP32_BASE_URL}/api/update`);
+        const freeSpace = updateStatusResponse.data.free_space;
+
+        if (firmwareFile.size > freeSpace) {
             return res.status(400).json({ error: 'Firmware file too large' });
         }
 

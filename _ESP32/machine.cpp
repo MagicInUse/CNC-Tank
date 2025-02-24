@@ -284,7 +284,7 @@ void handleApiUpdateGet() {
     StaticJsonDocument<200> response;
     response["version"] = FIRMWARE_VERSION;
     response["used_space"] = ESP.getSketchSize();
-    response["free_space"] = ESP.getFreeSketchSpace();
+    response["free_space"] = ESP.getFreeSketchSpace(); // Add this line to include free space
     
     String responseStr;
     serializeJson(response, responseStr);
