@@ -7,8 +7,8 @@
 #include "FastAccelStepper.h" //Jochen's library
 #include <Preferences.h>
 
-//Create preferneces arguments.
-Preferences myPrgVar;
+//Firmware version to be updated on major milestones - Version tracking
+#define FIRMWARE_VERSION "1.0.09"
 
 //Stepper hardware control pins
 #define rightStepperEnb 26
@@ -43,9 +43,11 @@ FastAccelStepper *zStepper = NULL;
 FastAccelStepper *rightStepper = NULL;
 FastAccelStepper *leftStepper = NULL;
 
-//TO-DO Add GRBL global variable here. Consider making these changeable/readable by the webpage.
-
+//Webserver Object
 WebServer server(80);
+
+//Preferences Object.
+Preferences myPrgVar;
 
 //Replace with credential bound keys.
 String ssid;
@@ -53,8 +55,6 @@ String password;
 
 // Change this to your desired hostname - for MDNS
 const char* host = "cnc-tank";
-
-#define FIRMWARE_VERSION "1.0.09"  // Add version tracking
 
 // HTML for the update page - this will be for direct updates, not through the tunnel service
 const char* serverIndex = R"(
@@ -231,7 +231,6 @@ void handleUpdateUpload() {
 }
 
 // OTA tunnel update handlers
-
 void handleTunnelUpdate() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
@@ -310,6 +309,74 @@ void handleApiUpdatePost() {
     }
 }
 
+//TO-DO Select correct types for the keys. Not all keys are floats. Make sure to assign "N" for Null to unused settings.
+//Create a namespace for GRBL. Or check for its existance.
+void handleGrblSetup(){
+  myPrgVar.begin("GBRL", false);
+  bool keyPresent = myPrgVar.isKey("$0");
+  if(keyPresent){
+      Serial.println("Keys are already present!");
+      return;
+  }
+  //Settings 2, 3, 4, 5, 6, 26, 32 are all non - use scenarios for the time being.
+  else{
+    Serial.println("Keys are needed! Adding...");
+    myPrgVar.putFloat("$0", 1.0);
+    myPrgVar.putFloat("$1", 2.0);
+    myPrgVar.putFloat("$2", 3.0);
+    myPrgVar.putFloat("$3", 4.0);
+    myPrgVar.putFloat("$4", 5.0);
+    myPrgVar.putFloat("$5", 6.0);
+    myPrgVar.putFloat("$6", 7.0);
+    myPrgVar.putFloat("$10", 8.0);
+    myPrgVar.putFloat("$11", 9.0);
+    myPrgVar.putFloat("$12", 10.0);
+    myPrgVar.putFloat("$13", 11.0);
+    myPrgVar.putFloat("$20", 12.0);
+    myPrgVar.putFloat("$21", 13.0);
+    myPrgVar.putFloat("#22", 14.0);
+    myPrgVar.putFloat("$23", 15.0);
+    myPrgVar.putFloat("$24", 16.0);
+    myPrgVar.putFloat("$25", 17.0);
+    myPrgVar.putFloat("$26", 18.0);
+    myPrgVar.putFloat("$27", 19.0);
+    myPrgVar.putFloat("$30", 20.0);
+    myPrgVar.putFloat("$31", 21.0);
+    myPrgVar.putFloat("$32", 22.0);
+    myPrgVar.putFloat("$100", 23.0);
+    myPrgVar.putFloat("$101", 24.0);
+    myPrgVar.putFloat("$102", 25.0);
+    myPrgVar.putFloat("$110", 26.0);
+    myPrgVar.putFloat("$111", 27.0);
+    myPrgVar.putFloat("$112", 28.0);
+    myPrgVar.putFloat("$120", 29.0);
+    myPrgVar.putFloat("$121", 30.0);
+    myPrgVar.putFloat("$122", 31.0);
+    myPrgVar.putFloat("$130", 32.0);
+    myPrgVar.putFloat("$131", 33.0);
+    myPrgVar.putFloat("$132", 34.0);
+  }
+  myPrgVar.end();
+}
+
+//TO-DO expand this function to be able to respond to a server.
+//Create a function that iterates through keys in the namespcae GRBL and prints them to the Serial Monitor for Testing.
+void GRBLtest(String setting, bool mode){
+  myPrgVar.begin("GBRL", mode);
+  float storedVal = myPrgVar.getFloat(setting.c_str(), 0);
+  Serial.print("Setting at key: ");
+  Serial.print(setting);
+  Serial.print(" is: ");
+  Serial.println(storedVal);
+  myPrgVar.end();
+}
+
+//TO-DO function to start/stop spindle. With speed varying from 0-255. The enable should remain low for now. As to prevent exciting run away events.
+void spindle(bool isEnabled, int speed){
+  digitalWrite(spindleEnb, isEnabled);
+  analogWrite(spindlePWM, speed);
+}
+
 // Main Setup
 void setup() {
     //Pin modes. Will need any "extras" added in later
@@ -385,6 +452,15 @@ void setup() {
     }
 
     myPrgVar.end();
+
+    //Test for the existance of and/or create the GRBL variable map. Seperate function.
+    handleGrblSetup();
+
+    //Print three samples (for a sanity check)
+    GRBLtest("$1", true);
+    GRBLtest("$121", true);
+    GRBLtest("$132", true);
+
 
     //Run wifi. 
     WiFi.mode(WIFI_AP_STA);
