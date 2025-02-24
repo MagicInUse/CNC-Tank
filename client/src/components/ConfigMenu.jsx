@@ -1,28 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useConsoleLog } from '../utils/ConsoleLog';
+import { useMachine } from '../context/MachineContext';
 
 const ConfigMenu = () => {
     const [showConfig, setShowConfig] = useState(false);
-    const [ipAddress, setIpAddress] = useState('');
+    const [ipAddress, setIpAddress] = useState('cnc-tank.local');
     const [isValid, setIsValid] = useState(true);
     const [vacuumAndSpindle, setVacuumAndSpindle] = useState(false);
     const [vacuumOnly, setVacuumOnly] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState('unknown'); // 'unknown', 'connected', 'failed'
+    const [overrideDNS, setOverrideDNS] = useState(false);
 
     // Add Console log hooks
     const { logRequest, logResponse, logError } = useConsoleLog();
+    const { setStatus } = useMachine();
 
     // Add debounced ping function after handleIPChange
     useEffect(() => {
         if (!isValid || !ipAddress.trim()) {
             setConnectionStatus('unknown');
+            setStatus('unknown');
             return;
         }
         
-        // Check if IP has all 4 octets
+        // Check if IP has all 4 octets or is the default IP
         const octets = ipAddress.split('.');
-        if (octets.length !== 4 || octets.some(octet => octet === '')) {
+        if (octets.length !== 4 && ipAddress !== 'cnc-tank.local') {
             return;
         }
     
@@ -36,13 +40,16 @@ const ConfigMenu = () => {
                 if (response.data.status === 'connected') {
                     setConnectionStatus('connected');
                     logResponse(`Successfully connected to ${ipAddress}`);
+                    setStatus('connected');
                 } else {
                     setConnectionStatus('failed');
                     logError(`Failed to connect to ${ipAddress}`);
+                    setStatus('failed');
                 }
             } catch (error) {
                 setConnectionStatus('failed');
                 logError(`Connection error: ${error.message}`);
+                setStatus('failed');
             }
         }, 1000);
     
@@ -145,12 +152,29 @@ const ConfigMenu = () => {
         }
     };
 
+    const handleOverrideDNSChange = (e) => {
+        setOverrideDNS(e.target.checked);
+        if (!e.target.checked) {
+            setIpAddress('cnc-tank.local');
+            setIsValid(true);
+        }
+    };
+
     return (
         <>
             {showConfig ? (
                 <div className="absolute top-10 right-10 p-4 border border-gray-400 rounded-lg shadow-lg z-50">
                     <h3 className="text-lg font-semibold mb-2">Configuration</h3>
                     <div className="space-y-2">
+                        <label className="flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="form-checkbox h-4 w-4"
+                                checked={overrideDNS}
+                                onChange={handleOverrideDNSChange}
+                            />
+                            <span className="ml-2">Override Default DNS</span>
+                        </label>
                         <label className="flex flex-col space-y-1">
                             <span className="text-sm font-medium text-gray-500">
                             <div style={{ 
@@ -169,6 +193,7 @@ const ConfigMenu = () => {
                                 onChange={handleIPChange}
                                 placeholder="192.168.1.1"
                                 autoComplete="off"
+                                disabled={!overrideDNS}
                                 className={`form-input p-0.5 pl-2 w-36 rounded-md text-black border 
                                     ${isValid ? 'border-gray-300' : 'border-red-500'} 
                                     focus:outline-none focus:ring-2 

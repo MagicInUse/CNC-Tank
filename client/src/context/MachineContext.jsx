@@ -13,6 +13,7 @@ export const MachineProvider = ({ children }) => {
     // const { logResponse, logError } = useConsoleLog();
     const [position, setPosition] = useState({ x: 0, y: 0, z: 0, theta: 0 });
     const [stockSize, setStockSize] = useState(defaultStockSize);
+    const [status, setStatus] = useState('unknown'); // 'unknown', 'connected', 'failed'
 
     // Log initial stock size after component mounts
     useEffect(() => {
@@ -37,7 +38,7 @@ export const MachineProvider = ({ children }) => {
     };
 
     return (
-        <MachineContext.Provider value={{ position, setPosition, stockSize, setStockSize: setLimitedStockSize }}>
+        <MachineContext.Provider value={{ position, setPosition, stockSize, setStockSize: setLimitedStockSize, status, setStatus }}>
             {children}
         </MachineContext.Provider>
     );
