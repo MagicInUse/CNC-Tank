@@ -210,6 +210,42 @@ void handleTunnelUpdateStatus() {
     server.send(200, "text/plain", "Ready for update");
 }
 
+void handleUpdatePost() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    delay(1000);
+    ESP.restart();
+}
+
+void handleApiUpdateGet() {
+    StaticJsonDocument<200> response;
+    response["version"] = FIRMWARE_VERSION;
+    response["used_space"] = ESP.getSketchSize();
+    response["free_space"] = ESP.getFreeSketchSpace();
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
+}
+
+void handleApiUpdatePost() {
+    server.sendHeader("Connection", "close");
+    
+    StaticJsonDocument<200> response;
+    response["success"] = !Update.hasError();
+    response["message"] = Update.hasError() ? "Update failed" : "Update successful";
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    
+    server.send(200, "application/json", responseStr);
+    
+    if (!Update.hasError()) {
+        delay(500);  // Give time for response to be sent
+        ESP.restart();
+    }
+}
+
 // Main Setup
 void setup() {
     //Pin modes. Will need any "extras" added in later
@@ -295,43 +331,11 @@ void setup() {
     
     // OTA Update endpoints - direct browser update
     server.on("/update", HTTP_GET, handleUpdate);
-    server.on("/update", HTTP_POST, []() {
-        server.sendHeader("Connection", "close");
-        server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-        delay(1000);
-        ESP.restart();
-    }, handleUpdateUpload);
+    server.on("/update", HTTP_POST, handleUpdatePost, handleUpdateUpload);
 
     // OTA Tunnel endpoints - via React frontend
-    server.on("/api/update", HTTP_GET, []() {
-        StaticJsonDocument<200> response;
-        response["version"] = FIRMWARE_VERSION;
-        response["status"] = "ready";
-        response["used_space"] = ESP.getSketchSize();
-        response["free_space"] = ESP.getFreeSketchSpace();
-        
-        String responseStr;
-        serializeJson(response, responseStr);
-        server.send(200, "application/json", responseStr);
-    });
-
-    server.on("/api/update", HTTP_POST, []() {
-        server.sendHeader("Connection", "close");
-        
-        StaticJsonDocument<200> response;
-        response["success"] = !Update.hasError();
-        response["message"] = Update.hasError() ? "Update failed" : "Update successful";
-        
-        String responseStr;
-        serializeJson(response, responseStr);
-        
-        server.send(200, "application/json", responseStr);
-        
-        if (!Update.hasError()) {
-            delay(500);  // Give time for response to be sent
-            ESP.restart();
-        }
-    }, handleTunnelUpdate);
+    server.on("/api/update", HTTP_GET, handleApiUpdateGet);
+    server.on("/api/update", HTTP_POST, handleApiUpdatePost, handleTunnelUpdate);
 
     
     server.begin();
