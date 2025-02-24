@@ -1,9 +1,14 @@
+//Include all the neccasary libraries.
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h> //Benoit's library
 #include <ESPmDNS.h>
 #include <Update.h>
 #include "FastAccelStepper.h" //Jochen's library
+#include <Preferences.h>
+
+//Create preferneces arguments.
+Preferences myPrgVar;
 
 //Stepper hardware control pins
 #define rightStepperEnb 26
@@ -42,12 +47,12 @@ FastAccelStepper *leftStepper = NULL;
 
 WebServer server(80);
 
-// TODO: Replace with your credentials
-const char* ssid = "";
-const char* password = "";
-const char* host = "cnc-tank"; // Change this to your desired hostname
+//Replace with credential bound keys.
+String ssid;
+String password;
 
-#define FIRMWARE_VERSION "1.0.04"  // Add version tracking
+// Change this to your desired hostname - for MDNS
+const char* host = "cnc-tank";
 
 // HTML for the update page - this will be for direct updates, not through the tunnel service
 const char* serverIndex = R"(
@@ -65,14 +70,7 @@ const char* serverIndex = R"(
 
 // Endpoint handlers
 void handleTestData() {
-    StaticJsonDocument<200> doc;
-    doc["temperature"] = 69;
-    doc["humidity"] = 33;
-    doc["firmware_version"] = FIRMWARE_VERSION;  // Add this line
-    
-    String response;
-    serializeJson(doc, response);
-    server.send(200, "application/json", response);
+    server.send(200, "application/json", "{\"temperature\": 25, \"humidity\": 10}");
 }
 
 void handleStatus() {
@@ -139,21 +137,17 @@ void handleUpdateDone() {
     ESP.restart();
 }
 
-// Modify the handleUpdateUpload function
 void handleUpdateUpload() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
         Serial.printf("Update: %s\n", upload.filename.c_str());
         if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
             Update.printError(Serial);
-            return;
         }
     } else if (upload.status == UPLOAD_FILE_WRITE) {
         if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
             Update.printError(Serial);
-            return;
         }
-        Serial.printf("Progress: %u/%u bytes\n", upload.totalSize, UPDATE_SIZE_UNKNOWN);
     } else if (upload.status == UPLOAD_FILE_END) {
         if (Update.end(true)) {
             Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
@@ -311,8 +305,20 @@ void setup() {
       }
     }
 
+    //Retrieve network credentials for network.
+    myPrgVar.begin("credentials", true);
+    ssid = myPrgVar.getString("ssid", "");
+    password = myPrgVar.getString("password", "");
+
+    if(ssid == "" || password == ""){
+      Serial.println("No credentials were found.");
+    }
+
+    myPrgVar.end();
+
+    //Run wifi. 
     WiFi.mode(WIFI_AP_STA);
-    WiFi.begin(ssid, password);
+    WiFi.begin(ssid.c_str(), password.c_str());
     
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
@@ -329,7 +335,7 @@ void setup() {
     server.on("/api/test-data", HTTP_GET, handleTestData);
     server.on("/api/control", HTTP_POST, handleControl);
     
-    // OTA Update endpoints - direct browser update
+    // OTA Update endpoints
     server.on("/update", HTTP_GET, handleUpdate);
     server.on("/update", HTTP_POST, handleUpdatePost, handleUpdateUpload);
 
@@ -343,14 +349,6 @@ void setup() {
     
     Serial.println("Server started on host: " + WiFi.localIP().toString());
     Serial.printf("OTA Updates available at http://%s.local/update\n", host);
-
-    //Small demo to see if anything can be done.
-    // zStepper->moveTo(500, true);
-    // zStepper->moveTo(0, true);
-    // leftStepper->moveTo(500, true);
-    // leftStepper->moveTo(0, true);
-    // rightStepper->moveTo(500, true);
-    // rightStepper->moveTo(0, true);
 }
 
 // Main Loop
