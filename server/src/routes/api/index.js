@@ -6,6 +6,8 @@ import configRouter from './config/index.js';
 
 const apiRouter = express.Router();
 
+// /api/
+
 apiRouter.use('/config', configRouter);
 apiRouter.use('/control', controlRouter);
 apiRouter.use('/status', statusRouter);
