@@ -1,3 +1,15 @@
+/*
+    CNC-Tank Code:
+
+    Groundwork laid for remote communications. To include the transmission of possible errors through console logs, Over the Air Updates, and the ability to control all three
+    stepper motors, the spindle, and the laser.
+
+    TO-DOs - Updated 02/24/2025 @ 11:55AM
+
+    Cautions - Program storage is almost full. Consider removing any unused libraries or functions, and most tethered serial messages need to be removed or commented out to save
+    storage space.
+*/
+
 //Include all the neccasary libraries.
 #include <WiFi.h>
 #include <WebServer.h>
@@ -74,6 +86,7 @@ const char* serverIndex = R"(
 // Endpoint handlers
 String serverAddress = ""; // Global variable to store the server address
 
+//TO-DO is this needed any longer? Might be able to remove this function.
 void handleTestData() {
     StaticJsonDocument<200> doc;
     // Get the internal temperature sensor reading
@@ -145,6 +158,7 @@ void sendConsoleMessage(const String& type, const String& message) {
     http.end();
 }
 
+//TO-DO Function needs to be expanded to: Receive step commands for L, R steppers to include direction, step count, and speed in Hz.
 void handleControl() {
     if (server.hasArg("plain") == false) {
         server.send(400, "application/json", "{\"error\": \"No data received\"}");
@@ -190,6 +204,7 @@ void handleControl() {
     server.send(200, "application/json", responseStr);
 }
 
+//TO-DO Add a switch on/off for the Laser. Laser SHOULD not be left running for long periods of time. Consider adding a non-blocking timer.
 void handleLaser() {
     if (server.hasArg("plain") == false) {
         server.send(400, "application/json", "{\"error\": \"No data received\"}");
@@ -222,6 +237,7 @@ void handleLaser() {
     server.send(200, "application/json", responseStr);
 }
 
+//TO-DO Probably remove this function. As the spindle should be controlled by the handleSpindleSpeed function. Might use this as a "playground" for testing purposes.
 void handleSpindle() {
     if (server.hasArg("plain") == false) {
         server.send(400, "application/json", "{\"error\": \"No data received\"}");
@@ -254,6 +270,7 @@ void handleSpindle() {
     server.send(200, "application/json", responseStr);
 }
 
+//TO-DO Receive spindle state as "M" codes. M03 for enable, M05 for disable followed by integer value of 0-255 for PWM.
 void handleSpindleSpeed() {
     if (server.hasArg("plain") == false) {
         server.send(400, "application/json", "{\"error\": \"No data received\"}");
@@ -291,6 +308,7 @@ void handleSpindleSpeed() {
     server.send(200, "application/json", responseStr);
 }
 
+//TO-DO Receive Z depth as a step count. Make sure to add direction and speed as well.
 void handleSpindleZDepth() {
     if (server.hasArg("plain") == false) {
         server.send(400, "application/json", "{\"error\": \"No data received\"}");
@@ -323,6 +341,12 @@ void handleSpindleZDepth() {
     serializeJson(response, responseStr);
     server.send(200, "application/json", responseStr);
 }
+
+//TO-DO Add a function to handle the Z-probe.
+
+//TO-DO Add a function to the Z-Endstop
+
+//TO-DO Add a function to handle the outlet. M08 to enable, M09 to disable
 
 // OTA update handlers
 void handleUpdate() {
@@ -488,7 +512,7 @@ void handleGrblSetup(){
   myPrgVar.end();
 }
 
-//TO-DO expand this function to be able to respond to a server.
+//TO-DO expand this function to be able to respond to a server. On inital connect.
 //Create a function that iterates through keys in the namespcae GRBL and prints them to the Serial Monitor for Testing.
 void GRBLtest(String setting, bool mode){
   myPrgVar.begin("GBRL", mode);
@@ -498,12 +522,6 @@ void GRBLtest(String setting, bool mode){
   Serial.print(" is: ");
   Serial.println(storedVal);
   myPrgVar.end();
-}
-
-//TO-DO function to start/stop spindle. With speed varying from 0-255. The enable should remain low for now. As to prevent exciting run away events.
-void spindle(bool isEnabled, int speed){
-  digitalWrite(spindleEnb, isEnabled);
-  analogWrite(spindlePWM, speed);
 }
 
 // Main Setup
