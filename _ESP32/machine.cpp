@@ -47,7 +47,7 @@ const char* ssid = "";
 const char* password = "";
 const char* host = "cnc-tank"; // Change this to your desired hostname
 
-#define FIRMWARE_VERSION "1.0.02"  // Add version tracking
+#define FIRMWARE_VERSION "1.0.04"  // Add version tracking
 
 // HTML for the update page - this will be for direct updates, not through the tunnel service
 const char* serverIndex = R"(
