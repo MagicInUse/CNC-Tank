@@ -17,6 +17,25 @@ const Console = () => {
         scrollToBottom();
     }, [messages]);
 
+    const handleCommand = async (command) => {
+        if (command === 'test') {
+            try {
+                const response = await fetch('/api/status/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                logRequest(`Test command response: ${JSON.stringify(data)}`);
+            } catch (error) {
+                logRequest(`Error sending test command: ${error.message}`);
+            }
+        } else {
+            logRequest(command);
+        }
+    };
+
     return (
         <div className={`fixed bottom-64 right-10 z-10 console ${isExpanded ? 'h-1/2' : 'h-64'} border border-gray-400 bg-black bg-opacity-75 rounded-lg overflow-hidden`}>
             <div className="flex flex-col h-full relative">
@@ -54,7 +73,7 @@ const Console = () => {
                         className="w-full bg-black bg-opacity-50 text-white px-2 py-1 rounded border border-gray-600 focus:border-[#2cc51e] focus:outline-none font-mono text-sm"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && e.target.value) {
-                                logRequest(e.target.value);
+                                handleCommand(e.target.value);
                                 e.target.value = '';
                             }
                         }}

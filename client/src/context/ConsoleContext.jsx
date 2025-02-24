@@ -19,3 +19,5 @@ export const ConsoleProvider = ({ children }) => {
         </ConsoleContext.Provider>
     );
 };
+
+export const useConsole = () => useContext(ConsoleContext);

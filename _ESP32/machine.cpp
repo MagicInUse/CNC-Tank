@@ -87,6 +87,28 @@ void handleTestData() {
     server.send(200, "application/json", response);
 }
 
+// TODO: Implement this function, or remove it
+// Send a console message to the server, without a prompt from the server
+// 
+// void handleTestCommand() {
+//     StaticJsonDocument<200> doc;
+//     // Get the internal temperature sensor reading
+//     uint8_t temperature = temperatureRead();
+//     doc["internal_temperature"] = temperature;
+//     // Get the chip ID
+//     uint32_t chipId = ESP.getEfuseMac();
+//     doc["chip_id"] = chipId;
+//     // Get the firmware version
+//     doc["firmware_version"] = FIRMWARE_VERSION;
+    
+//     String response;
+//     serializeJson(doc, response);
+//     Serial.println("Test data: " + response);
+
+//     // Send a console message back to the server
+//     sendConsoleMessage("Test command executed: " + response);
+// }
+
 void handleStatus() {
     StaticJsonDocument<200> response;
     response["status"] = "connected";
@@ -95,6 +117,38 @@ void handleStatus() {
     serializeJson(response, responseStr);
     server.send(200, "application/json", responseStr);
 }
+
+// Send a console message to the server, this function's survivability is based on handleTestCommand()
+//
+// void sendConsoleMessage(const String& message) {
+//     HTTPClient http;
+//     const char* serverName = "http://cnc-base.local:3001/api/status/console"; // Replace with your Node server address and port
+
+//     // Prepare JSON payload
+//     StaticJsonDocument<200> doc;
+//     doc["message"] = message;
+
+//     String requestBody;
+//     serializeJson(doc, requestBody);
+
+//     // Configure HTTPClient
+//     http.begin(serverName);
+//     http.addHeader("Content-Type", "application/json");
+
+//     // Send HTTP POST request
+//     int httpResponseCode = http.POST(requestBody);
+
+//     // Check the response
+//     if (httpResponseCode > 0) {
+//         String response = http.getString();
+//         Serial.println("Server response: " + response);
+//     } else {
+//         Serial.println("Error sending console message: " + String(httpResponseCode));
+//     }
+
+//     // End the HTTP connection
+//     http.end();
+// }
 
 void handleControl() {
     if (server.hasArg("plain") == false) {
@@ -129,6 +183,8 @@ void handleControl() {
     Serial.println("Direction: " + direction);
     Serial.println("Speed: " + String(speed));
     Serial.println("Step: " + String(step));
+    
+    sendConsoleMessage("Received command: Axis=" + axis + ", Direction=" + direction + ", Speed=" + String(speed) + ", Step=" + String(step));
     
     StaticJsonDocument<200> response;
     response["status"] = "success";
@@ -348,6 +404,8 @@ void setup() {
     server.on("/api/status", HTTP_GET, handleStatus);
     server.on("/api/test-data", HTTP_GET, handleTestData);
     server.on("/api/control", HTTP_POST, handleControl);
+    // TODO: Implement this function, or remove it, based on what handleTestCommand does
+    // server.on("/api/test", HTTP_POST, handleTestCommand);
     
     // OTA Update endpoints
     server.on("/update", HTTP_GET, handleUpdate);
