@@ -154,6 +154,89 @@ void handleUpdateUpload() {
         } else {
             Update.printError(Serial);
         }
+    } else if (upload.status == UPLOAD_FILE_ABORTED) {
+        Update.end();
+        Serial.println("Update aborted");
+    }
+}
+
+// OTA tunnel update handlers
+
+void handleTunnelUpdate() {
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+        Serial.printf("Tunnel Update: %s\n", upload.filename.c_str());
+        
+        // Validate file name ends with .bin
+        if (!upload.filename.endsWith(".bin")) {
+            Serial.println("Invalid file type");
+            return;
+        }
+        
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+            Update.printError(Serial);
+            return;
+        }
+        
+        Serial.println("Update started");
+    } 
+    else if (upload.status == UPLOAD_FILE_WRITE) {
+        if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+            Update.printError(Serial);
+            return;
+        }
+        Serial.printf("Progress: %u bytes\n", upload.totalSize);
+    } 
+    else if (upload.status == UPLOAD_FILE_END) {
+        if (Update.end(true)) {
+            Serial.printf("Update Success: %u bytes\nRebooting...\n", upload.totalSize);
+        } else {
+            Update.printError(Serial);
+        }
+    }
+    else if (upload.status == UPLOAD_FILE_ABORTED) {
+        Update.end();
+        Serial.println("Update aborted");
+    }
+}
+
+void handleTunnelUpdateStatus() {
+    server.send(200, "text/plain", "Ready for update");
+}
+
+void handleUpdatePost() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    delay(1000);
+    ESP.restart();
+}
+
+void handleApiUpdateGet() {
+    StaticJsonDocument<200> response;
+    response["version"] = FIRMWARE_VERSION;
+    response["used_space"] = ESP.getSketchSize();
+    response["free_space"] = ESP.getFreeSketchSpace();
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
+}
+
+void handleApiUpdatePost() {
+    server.sendHeader("Connection", "close");
+    
+    StaticJsonDocument<200> response;
+    response["success"] = !Update.hasError();
+    response["message"] = Update.hasError() ? "Update failed" : "Update successful";
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    
+    server.send(200, "application/json", responseStr);
+    
+    if (!Update.hasError()) {
+        delay(500);  // Give time for response to be sent
+        ESP.restart();
     }
 }
 
@@ -254,7 +337,12 @@ void setup() {
     
     // OTA Update endpoints
     server.on("/update", HTTP_GET, handleUpdate);
-    server.on("/update", HTTP_POST, handleUpdateDone, handleUpdateUpload);
+    server.on("/update", HTTP_POST, handleUpdatePost, handleUpdateUpload);
+
+    // OTA Tunnel endpoints - via React frontend
+    server.on("/api/update", HTTP_GET, handleApiUpdateGet);
+    server.on("/api/update", HTTP_POST, handleApiUpdatePost, handleTunnelUpdate);
+
     
     server.begin();
     MDNS.addService("http", "tcp", 80);
