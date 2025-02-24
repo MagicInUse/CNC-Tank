@@ -30,3 +30,67 @@ export const sendCommand = async (req, res) => {
         res.status(500).json({ error: errorMessage });
     }
 };
+
+export const toggleLaser = async (req, res) => {
+    const { enable } = req.body;
+
+    if (typeof enable !== 'boolean') {
+        return res.status(400).json({ error: 'Invalid parameter for laser enable/disable' });
+    }
+
+    try {
+        const response = await axios.post(`${ESP32_BASE_URL}/api/laser`, { enable });
+        res.json(response.data);
+    } catch (error) {
+        const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
+        res.status(500).json({ error: errorMessage });
+    }
+};
+
+export const toggleSpindle = async (req, res) => {
+    const { enable } = req.body;
+
+    if (typeof enable !== 'boolean') {
+        return res.status(400).json({ error: 'Invalid parameter for spindle enable/disable' });
+    }
+
+    try {
+        const response = await axios.post(`${ESP32_BASE_URL}/api/spindle`, { enable });
+        res.json(response.data);
+    } catch (error) {
+        const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
+        res.status(500).json({ error: errorMessage });
+    }
+};
+
+export const setSpindleSpeed = async (req, res) => {
+    const { speed } = req.body;
+
+    if (typeof speed !== 'number' || speed < 0 || speed > 100) {
+        return res.status(400).json({ error: 'Invalid spindle speed value' });
+    }
+
+    try {
+        const response = await axios.post(`${ESP32_BASE_URL}/api/spindle/speed`, { speed });
+        res.json(response.data);
+    } catch (error) {
+        const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
+        res.status(500).json({ error: errorMessage });
+    }
+};
+
+export const setSpindleZDepth = async (req, res) => {
+    const { depth } = req.body;
+
+    if (typeof depth !== 'number') {
+        return res.status(400).json({ error: 'Invalid spindle Z depth value' });
+    }
+
+    try {
+        const response = await axios.post(`${ESP32_BASE_URL}/api/spindle/depth`, { depth });
+        res.json(response.data);
+    } catch (error) {
+        const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
+        res.status(500).json({ error: errorMessage });
+    }
+};

@@ -1,5 +1,5 @@
 // Global ESP32 configuration
-export let ESP32_BASE_URL = process.env.ESP32_BASE_URL || 'cnc-tank.local';
+export let ESP32_BASE_URL = process.env.ESP32_BASE_URL || 'http://cnc-tank.local';
 
 export const setESP32BaseURL = (ipAddress) => {
     if (!ipAddress) {

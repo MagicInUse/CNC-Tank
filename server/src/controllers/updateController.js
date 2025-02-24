@@ -36,6 +36,7 @@ export const handleFirmwareUpdate = async (req, res) => {
             return res.status(400).json({ error: 'Firmware file too large' });
         }
 
+        // TODO: Fix
         // Remove version check for now as it's causing issues
         // const currentVersion = await axios.get(`${ESP32_BASE_URL}/api/test-data`);
         // if (currentVersion.data.firmware_version === newVersion) {
