@@ -7,10 +7,11 @@ import Map from '../components/Map';
 // import FileCompare from '../components/FileCompare';
 // import ObjectsInfo from '../components/ObjectsInfo';
 import NCInfo from '../components/NCInfo';
+import { ConsoleProvider } from '../context/ConsoleContext';
 
 const Dashboard = () => {
     return (
-        <>
+        <ConsoleProvider>
             <ConfigMenu />
             <LocationCoordinates />
             <Console />
@@ -19,7 +20,7 @@ const Dashboard = () => {
             {/* <ObjectsInfo /> */}
             <NCInfo />
             <Map />
-        </>
+        </ConsoleProvider>
     );
 };
 

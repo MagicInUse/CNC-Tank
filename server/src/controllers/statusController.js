@@ -1,6 +1,20 @@
 import axios from 'axios';
+import { networkInterfaces } from 'os';
 import { ESP32_BASE_URL, setESP32BaseURL } from '../config/esp32.js';
 import { ConsoleContext } from '../utils/ConsoleContext.js';
+
+const getServerIPAddress = (port) => {
+    const nets = networkInterfaces();
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+            // Skip over non-IPv4 and internal (i.e., 127.0.0.1) addresses
+            if (net.family === 'IPv4' && !net.internal) {
+                return `${net.address}:${port}`;
+            }
+        }
+    }
+    return `localhost:${port}`;
+};
 
 export const checkStatus = async (req, res) => {
     const { ipAddress } = req.body;
@@ -13,8 +27,12 @@ export const checkStatus = async (req, res) => {
         // Update ESP32_BASE_URL with new IP
         setESP32BaseURL(ipAddress);
         
+        // Get the server's IP address with port
+        const serverIPAddress = getServerIPAddress(req.socket.localPort);
+        
         // Test connection to ESP32
         const response = await axios.get(`${ESP32_BASE_URL}/api/status`, {
+            params: { serverAddress: serverIPAddress },
             timeout: 3000
         });
 
@@ -37,40 +55,27 @@ export const checkStatus = async (req, res) => {
 };
 
 export const handleConsoleMessage = (req, res) => {
-    const { message } = req.body;
-    if (!message) {
-        return res.status(400).json({ error: 'Message is required' });
+    const { type, message } = req.body;
+    if (!type || !message) {
+        return res.status(400).json({ error: 'Type and message are required' });
     }
 
-    ConsoleContext.addMessage('info', message);
+    let color;
+    switch (type) {
+        case 'info':
+            color = 'blue';
+            break;
+        case 'success':
+            color = 'green';
+            break;
+        case 'error':
+            color = 'red';
+            break;
+        default:
+            color = 'black';
+    }
+
+    ConsoleContext.addMessage(color, message);
 
     res.status(200).json({ status: 'Message received' });
-};
-
-export const handleTestCommand = async (req, res) => {
-    try {
-        // Log the ESP32_BASE_URL
-        ConsoleContext.addMessage('info', `Sending test command to ${ESP32_BASE_URL}/api/test`);
-
-        // Send a test command to the ESP32
-        const response = await axios.post(`${ESP32_BASE_URL}/api/test`, {
-            command: 'test'
-        });
-
-        // Log the response to the console
-        ConsoleContext.addMessage('response', `Test command response: ${JSON.stringify(response.data)}`);
-
-        res.status(200).json({ status: 'Command sent', data: response.data });
-    } catch (error) {
-        // Log the full error response
-        ConsoleContext.addMessage('error', `Error sending test command: ${error.message}`);
-        if (error.response) {
-            ConsoleContext.addMessage('error', `Error response data: ${JSON.stringify(error.response.data)}`);
-        }
-
-        res.status(500).json({ 
-            status: 'failed', 
-            error: error.response?.data?.error || 'Error sending test command to ESP32' 
-        });
-    }
 };

@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useRef, useContext } from "react";
 import { ConsoleContext } from '../context/ConsoleContext';
 import { useConsoleLog } from '../utils/ConsoleLog';
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:3001');
 
 const Console = () => {
-    const { messages } = useContext(ConsoleContext);
+    const { messages, addMessage } = useContext(ConsoleContext);
     const { logRequest } = useConsoleLog();
     const consoleEndRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -16,6 +19,16 @@ const Console = () => {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    useEffect(() => {
+        socket.on('consoleMessage', (msg) => {
+            addMessage(msg.type, msg.message);
+        });
+
+        return () => {
+            socket.off('consoleMessage');
+        };
+    }, [addMessage]);
 
     const handleCommand = async (command) => {
         if (command === 'test') {
@@ -52,8 +65,8 @@ const Console = () => {
                         <div 
                             key={index} 
                             className={`mb-1 ${
-                                msg.type === 'request' ? 'text-blue-400' :
-                                msg.type === 'response' ? 'text-green-400' :
+                                msg.type === 'blue' ? 'text-blue-400' :
+                                msg.type === 'green' ? 'text-green-400' :
                                 'text-red-400'
                             }`}
                         >
