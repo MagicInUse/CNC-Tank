@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StopSVG, HomingSVG, HomedSVG, ArrowUpSVG, WifiSVG, NoWifiSVG, SpindleSVG } from '../assets/SVGs';
 import { useConsoleLog } from '../utils/ConsoleLog';
+import { useMachine } from '../context/MachineContext';
 
 // TODO: .nc file destructure in FileCompare or ObjectsInfo
 
@@ -22,6 +23,7 @@ const MovementControls = () => {
   
   // Console log hooks
   const { logRequest, logResponse, logError } = useConsoleLog();
+  const { position, status } = useMachine();
 
   const updateMovementStatus = (newState) => {
     setMovementState(newState);
@@ -60,6 +62,9 @@ const MovementControls = () => {
   }, [showSpeedMenu, showStepMenu]);
 
   const getMovementCenterButtonSVG = () => {
+    if (status === 'connected') {
+      return <WifiSVG className="w-full h-full" />;
+    }
     switch (movementState) {
       case 'home':
         return <HomedSVG className="w-full h-full" />;

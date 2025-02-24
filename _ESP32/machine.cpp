@@ -54,7 +54,7 @@ String password;
 // Change this to your desired hostname - for MDNS
 const char* host = "cnc-tank";
 
-#define FIRMWARE_VERSION "1.0.07"  // Add version tracking
+#define FIRMWARE_VERSION "1.0.09"  // Add version tracking
 
 // HTML for the update page - this will be for direct updates, not through the tunnel service
 const char* serverIndex = R"(
