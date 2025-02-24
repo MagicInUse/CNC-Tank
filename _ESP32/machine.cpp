@@ -47,7 +47,7 @@ const char* ssid = "";
 const char* password = "";
 const char* host = "cnc-tank"; // Change this to your desired hostname
 
-#define FIRMWARE_VERSION "1.0.06"  // Add version tracking
+#define FIRMWARE_VERSION "1.0.07"  // Add version tracking
 
 // HTML for the update page - this will be for direct updates, not through the tunnel service
 const char* serverIndex = R"(
@@ -66,9 +66,14 @@ const char* serverIndex = R"(
 // Endpoint handlers
 void handleTestData() {
     StaticJsonDocument<200> doc;
-    doc["temperature"] = 69;
-    doc["humidity"] = 33;
-    doc["firmware_version"] = FIRMWARE_VERSION;  // Add this line
+    // Get the internal temperature sensor reading
+    uint8_t temperature = temperatureRead();
+    doc["internal_temperature"] = temperature;
+    // Get the chip ID
+    uint32_t chipId = ESP.getEfuseMac();
+    doc["chip_id"] = chipId;
+    // Get the firmware version
+    doc["firmware_version"] = FIRMWARE_VERSION;
     
     String response;
     serializeJson(doc, response);
