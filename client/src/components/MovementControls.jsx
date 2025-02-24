@@ -88,38 +88,80 @@ const MovementControls = () => {
     }
   };
   
-  const toggleSpindle = () => {
+  const toggleSpindle = async () => {
     setSpindleOn(prev => {
-      const newState = !prev;
-      if (newState) {
-        logResponse(`Spindle started at ${parseInt(spindleSpeed)}%`);
-      } else {
-        logError(`Spindle stopped`);
-      }
-      return newState;
+        const newState = !prev;
+        const command = { enable: newState };
+
+        fetch('http://localhost:3001/api/control/spindle', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(command)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (newState) {
+                logResponse(`Spindle started at ${parseInt(spindleSpeed)}%`);
+            } else {
+                logError(`Spindle stopped`);
+            }
+        })
+        .catch(error => logError(`Error: ${error.message}`));
+
+        return newState;
     });
-  };
-  
-  const toggleLaser = () => {
+};
+
+const toggleLaser = async () => {
     setLaserOn(prev => {
-      const newState = !prev;
-      if (newState) {
-        logResponse('Laser enabled');
-      } else {
-        logError('Laser disabled');
-      }
-      return newState;
+        const newState = !prev;
+        const command = { enable: newState };
+
+        fetch('http://localhost:3001/api/control/laser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(command)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (newState) {
+                logResponse('Laser enabled');
+            } else {
+                logError('Laser disabled');
+            }
+        })
+        .catch(error => logError(`Error: ${error.message}`));
+
+        return newState;
     });
-  };
-  
-  const handleSpindleSpeed = (event) => {
+};
+
+const handleSpindleSpeed = async (event) => {
     const speed = parseInt(event.target.value);
     setSpindleSpeed(speed);
-    logResponse(`Spindle speed set to ${speed}%`);
-    if (spindleOn) {
-      logRequest(`Updating running spindle speed to ${speed}%`);
-    }
-  };
+
+    const command = { speed };
+
+    fetch('http://localhost:3001/api/control/spindle/speed', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(command)
+    })
+    .then(response => response.json())
+    .then(data => {
+        logResponse(`Spindle speed set to ${speed}%`);
+        if (spindleOn) {
+            logRequest(`Updating running spindle speed to ${speed}%`);
+        }
+    })
+    .catch(error => logError(`Error: ${error.message}`));
+};
 
   // Track speed changes without sending updates
   const handleSpindleSpeedChange = (event) => {

@@ -17,8 +17,17 @@ export const checkStatus = async (req, res) => {
         const response = await axios.get(`${ESP32_BASE_URL}/api/status`, {
             timeout: 3000
         });
+
+        // Get update information including free space
+        const updateResponse = await axios.get(`${ESP32_BASE_URL}/api/update`, {
+            timeout: 3000
+        });
         
-        res.json({ status: 'connected', data: response.data });
+        res.json({ 
+            status: 'connected', 
+            data: response.data,
+            update: updateResponse.data // Include update information
+        });
     } catch (error) {
         res.status(500).json({ 
             status: 'failed', 
@@ -33,7 +42,6 @@ export const handleConsoleMessage = (req, res) => {
         return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Assuming you have a way to access the console context
     ConsoleContext.addMessage('info', message);
 
     res.status(200).json({ status: 'Message received' });

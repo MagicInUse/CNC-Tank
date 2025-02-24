@@ -6,6 +6,7 @@
 #include <Update.h>
 #include "FastAccelStepper.h" //Jochen's library
 #include <Preferences.h>
+#include <HTTPClient.h>
 
 //Firmware version to be updated on major milestones - Version tracking
 #define FIRMWARE_VERSION "1.0.09"
@@ -120,35 +121,35 @@ void handleStatus() {
 
 // Send a console message to the server, this function's survivability is based on handleTestCommand()
 //
-// void sendConsoleMessage(const String& message) {
-//     HTTPClient http;
-//     const char* serverName = "http://cnc-base.local:3001/api/status/console"; // Replace with your Node server address and port
+void sendConsoleMessage(const String& message) {
+    HTTPClient http;
+    const char* serverName = "http://cnc-base.local:3001/api/status/console"; // Replace with your Node server address and port
 
-//     // Prepare JSON payload
-//     StaticJsonDocument<200> doc;
-//     doc["message"] = message;
+    // Prepare JSON payload
+    StaticJsonDocument<200> doc;
+    doc["message"] = message;
 
-//     String requestBody;
-//     serializeJson(doc, requestBody);
+    String requestBody;
+    serializeJson(doc, requestBody);
 
-//     // Configure HTTPClient
-//     http.begin(serverName);
-//     http.addHeader("Content-Type", "application/json");
+    // Configure HTTPClient
+    http.begin(serverName);
+    http.addHeader("Content-Type", "application/json");
 
-//     // Send HTTP POST request
-//     int httpResponseCode = http.POST(requestBody);
+    // Send HTTP POST request
+    int httpResponseCode = http.POST(requestBody);
 
-//     // Check the response
-//     if (httpResponseCode > 0) {
-//         String response = http.getString();
-//         Serial.println("Server response: " + response);
-//     } else {
-//         Serial.println("Error sending console message: " + String(httpResponseCode));
-//     }
+    // Check the response
+    if (httpResponseCode > 0) {
+        String response = http.getString();
+        Serial.println("Server response: " + response);
+    } else {
+        Serial.println("Error sending console message: " + String(httpResponseCode));
+    }
 
-//     // End the HTTP connection
-//     http.end();
-// }
+    // End the HTTP connection
+    http.end();
+}
 
 void handleControl() {
     if (server.hasArg("plain") == false) {
@@ -190,6 +191,140 @@ void handleControl() {
     response["status"] = "success";
     response["command"] = doc["command"];
     
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
+}
+
+void handleLaser() {
+    if (server.hasArg("plain") == false) {
+        server.send(400, "application/json", "{\"error\": \"No data received\"}");
+        return;
+    }
+
+    String body = server.arg("plain");
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
+        return;
+    }
+
+    if (!doc.containsKey("enable")) {
+        server.send(400, "application/json", "{\"error\": \"Missing required parameter: enable\"}");
+        return;
+    }
+
+    bool enable = doc["enable"];
+    digitalWrite(laser, enable ? HIGH : LOW);
+
+    StaticJsonDocument<200> response;
+    response["status"] = "success";
+    response["laser"] = enable ? "enabled" : "disabled";
+
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
+}
+
+void handleSpindle() {
+    if (server.hasArg("plain") == false) {
+        server.send(400, "application/json", "{\"error\": \"No data received\"}");
+        return;
+    }
+
+    String body = server.arg("plain");
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
+        return;
+    }
+
+    if (!doc.containsKey("enable")) {
+        server.send(400, "application/json", "{\"error\": \"Missing required parameter: enable\"}");
+        return;
+    }
+
+    bool enable = doc["enable"];
+    digitalWrite(spindleEnb, enable ? HIGH : LOW);
+
+    StaticJsonDocument<200> response;
+    response["status"] = "success";
+    response["spindle"] = enable ? "enabled" : "disabled";
+
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
+}
+
+void handleSpindleSpeed() {
+    if (server.hasArg("plain") == false) {
+        server.send(400, "application/json", "{\"error\": \"No data received\"}");
+        return;
+    }
+
+    String body = server.arg("plain");
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
+        return;
+    }
+
+    if (!doc.containsKey("speed")) {
+        server.send(400, "application/json", "{\"error\": \"Missing required parameter: speed\"}");
+        return;
+    }
+
+    int speed = doc["speed"];
+    if (speed < 0 || speed > 100) {
+        server.send(400, "application/json", "{\"error\": \"Invalid spindle speed value\"}");
+        return;
+    }
+
+    analogWrite(spindlePWM, map(speed, 0, 100, 0, 255));
+
+    StaticJsonDocument<200> response;
+    response["status"] = "success";
+    response["spindle_speed"] = speed;
+
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
+}
+
+void handleSpindleZDepth() {
+    if (server.hasArg("plain") == false) {
+        server.send(400, "application/json", "{\"error\": \"No data received\"}");
+        return;
+    }
+
+    String body = server.arg("plain");
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
+        return;
+    }
+
+    if (!doc.containsKey("depth")) {
+        server.send(400, "application/json", "{\"error\": \"Missing required parameter: depth\"}");
+        return;
+    }
+
+    int depth = doc["depth"];
+    // Assuming depth is in steps or some unit that the stepper can handle
+    zStepper->moveTo(depth);
+
+    StaticJsonDocument<200> response;
+    response["status"] = "success";
+    response["spindle_z_depth"] = depth;
+
     String responseStr;
     serializeJson(response, responseStr);
     server.send(200, "application/json", responseStr);
@@ -304,7 +439,7 @@ void handleApiUpdatePost() {
     server.send(200, "application/json", responseStr);
     
     if (!Update.hasError()) {
-        delay(500);  // Give time for response to be sent
+        delay(1000);  // Give time for response to be sent
         ESP.restart();
     }
 }
@@ -480,6 +615,10 @@ void setup() {
     server.on("/api/status", HTTP_GET, handleStatus);
     server.on("/api/test-data", HTTP_GET, handleTestData);
     server.on("/api/control", HTTP_POST, handleControl);
+    server.on("/api/laser", HTTP_POST, handleLaser);
+    server.on("/api/spindle", HTTP_POST, handleSpindle);
+    server.on("/api/spindle/speed", HTTP_POST, handleSpindleSpeed);
+    server.on("/api/spindle/depth", HTTP_POST, handleSpindleZDepth);
     // TODO: Implement this function, or remove it, based on what handleTestCommand does
     // server.on("/api/test", HTTP_POST, handleTestCommand);
     
