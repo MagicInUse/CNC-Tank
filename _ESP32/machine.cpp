@@ -21,7 +21,7 @@
 #include <HTTPClient.h>
 
 //Firmware version to be updated on major milestones - Version tracking
-#define FIRMWARE_VERSION "1.0.10"
+#define FIRMWARE_VERSION "1.0.11"
 
 //Stepper hardware control pins
 #define rightStepperEnb 26
