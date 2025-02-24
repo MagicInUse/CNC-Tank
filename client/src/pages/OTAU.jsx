@@ -35,7 +35,9 @@ const OTAU = () => {
                 throw new Error('Device not ready for update');
             }
 
-            setStatus('Uploading firmware... This may take up to 30 seconds.');
+            setStatus('Updating firmware... This may take up to 30 seconds.');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Ensure message is shown for at least 1 second
+
             const formData = new FormData();
             formData.append('firmware', file, file.name);
 
