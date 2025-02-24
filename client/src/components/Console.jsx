@@ -1,13 +1,11 @@
 import React, { useEffect, useState, useRef, useContext } from "react";
 import { ConsoleContext } from '../context/ConsoleContext';
-import { useConsoleLog } from '../utils/ConsoleLog';
 import io from 'socket.io-client';
 
 const socket = io('http://localhost:3001');
 
 const Console = () => {
     const { messages, addMessage } = useContext(ConsoleContext);
-    const { logRequest } = useConsoleLog();
     const consoleEndRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -30,22 +28,20 @@ const Console = () => {
         };
     }, [addMessage]);
 
-    const handleCommand = async (command) => {
-        if (command === 'test') {
-            try {
-                const response = await fetch('/api/status/test', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                logRequest(`Test command response: ${JSON.stringify(data)}`);
-            } catch (error) {
-                logRequest(`Error sending test command: ${error.message}`);
-            }
-        } else {
-            logRequest(command);
+    const handleCommand = async (type, command) => {
+        addMessage(type, command);
+    };
+
+    const getMessageColor = (type) => {
+        switch (type) {
+            case 'info':
+                return 'text-blue-400';
+            case 'success':
+                return 'text-green-400';
+            case 'error':
+                return 'text-red-400';
+            default:
+                return 'text-gray-400';
         }
     };
 
@@ -64,11 +60,7 @@ const Console = () => {
                     {messages.map((msg, index) => (
                         <div 
                             key={index} 
-                            className={`mb-1 ${
-                                msg.type === 'blue' ? 'text-blue-400' :
-                                msg.type === 'green' ? 'text-green-400' :
-                                'text-red-400'
-                            }`}
+                            className={`mb-1 ${getMessageColor(msg.type)}`}
                         >
                             <span className="text-gray-500">
                                 {msg.timestamp.toLocaleTimeString()} ►{' '}

@@ -60,22 +60,7 @@ export const handleConsoleMessage = (req, res) => {
         return res.status(400).json({ error: 'Type and message are required' });
     }
 
-    let color;
-    switch (type) {
-        case 'info':
-            color = 'blue';
-            break;
-        case 'success':
-            color = 'green';
-            break;
-        case 'error':
-            color = 'red';
-            break;
-        default:
-            color = 'black';
-    }
-
-    ConsoleContext.addMessage(color, message);
+    ConsoleContext.addMessage(type, message);
 
     res.status(200).json({ status: 'Message received' });
 };
