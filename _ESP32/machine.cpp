@@ -9,7 +9,7 @@
 #include <HTTPClient.h>
 
 //Firmware version to be updated on major milestones - Version tracking
-#define FIRMWARE_VERSION "1.0.09"
+#define FIRMWARE_VERSION "1.0.10"
 
 //Stepper hardware control pins
 #define rightStepperEnb 26
@@ -72,6 +72,8 @@ const char* serverIndex = R"(
 )";
 
 // Endpoint handlers
+String serverAddress = ""; // Global variable to store the server address
+
 void handleTestData() {
     StaticJsonDocument<200> doc;
     // Get the internal temperature sensor reading
@@ -88,29 +90,15 @@ void handleTestData() {
     server.send(200, "application/json", response);
 }
 
-// TODO: Implement this function, or remove it
-// Send a console message to the server, without a prompt from the server
-// 
-// void handleTestCommand() {
-//     StaticJsonDocument<200> doc;
-//     // Get the internal temperature sensor reading
-//     uint8_t temperature = temperatureRead();
-//     doc["internal_temperature"] = temperature;
-//     // Get the chip ID
-//     uint32_t chipId = ESP.getEfuseMac();
-//     doc["chip_id"] = chipId;
-//     // Get the firmware version
-//     doc["firmware_version"] = FIRMWARE_VERSION;
-    
-//     String response;
-//     serializeJson(doc, response);
-//     Serial.println("Test data: " + response);
-
-//     // Send a console message back to the server
-//     sendConsoleMessage("Test command executed: " + response);
-// }
-
 void handleStatus() {
+    if (server.hasArg("serverAddress")) {
+        serverAddress = server.arg("serverAddress");
+        Serial.println("Server address set to: " + serverAddress);
+
+        // Send initial console message
+        sendConsoleMessage("blue", "Hello, I'm ready to go!");
+    }
+
     StaticJsonDocument<200> response;
     response["status"] = "connected";
     
@@ -119,14 +107,19 @@ void handleStatus() {
     server.send(200, "application/json", responseStr);
 }
 
-// Send a console message to the server, this function's survivability is based on handleTestCommand()
-//
-void sendConsoleMessage(const String& message) {
+// Send a console message to the server
+void sendConsoleMessage(const String& type, const String& message) {
+    if (serverAddress == "") {
+        Serial.println("Server address not set. Cannot send console message.");
+        return;
+    }
+
     HTTPClient http;
-    const char* serverName = "http://cnc-base.local:3001/api/status/console"; // Replace with your Node server address and port
+    String serverName = "http://" + serverAddress + "/api/status/console";
 
     // Prepare JSON payload
     StaticJsonDocument<200> doc;
+    doc["type"] = type;
     doc["message"] = message;
 
     String requestBody;
@@ -145,6 +138,7 @@ void sendConsoleMessage(const String& message) {
         Serial.println("Server response: " + response);
     } else {
         Serial.println("Error sending console message: " + String(httpResponseCode));
+        Serial.println("HTTPClient error: " + http.errorToString(httpResponseCode));
     }
 
     // End the HTTP connection
@@ -185,7 +179,7 @@ void handleControl() {
     Serial.println("Speed: " + String(speed));
     Serial.println("Step: " + String(step));
     
-    sendConsoleMessage("Received command: Axis=" + axis + ", Direction=" + direction + ", Speed=" + String(speed) + ", Step=" + String(step));
+    sendConsoleMessage("blue", "Received command: Axis=" + axis + ", Direction=" + direction + ", Speed=" + String(speed) + ", Step=" + String(step));
     
     StaticJsonDocument<200> response;
     response["status"] = "success";
@@ -619,8 +613,6 @@ void setup() {
     server.on("/api/spindle", HTTP_POST, handleSpindle);
     server.on("/api/spindle/speed", HTTP_POST, handleSpindleSpeed);
     server.on("/api/spindle/depth", HTTP_POST, handleSpindleZDepth);
-    // TODO: Implement this function, or remove it, based on what handleTestCommand does
-    // server.on("/api/test", HTTP_POST, handleTestCommand);
     
     // OTA Update endpoints
     server.on("/update", HTTP_GET, handleUpdate);
