@@ -3,6 +3,7 @@ import { setESP32BaseURL } from '../../../config/esp32.js';
 
 const configRouter = express.Router();
 
+// /api/config/
 configRouter.post('/', (req, res) => {
     try {
         const { ipAddress } = req.body;

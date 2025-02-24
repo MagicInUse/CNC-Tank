@@ -307,6 +307,7 @@ void setup() {
         StaticJsonDocument<200> response;
         response["version"] = FIRMWARE_VERSION;
         response["status"] = "ready";
+        response["used_space"] = ESP.getSketchSize();
         response["free_space"] = ESP.getFreeSketchSpace();
         
         String responseStr;
