@@ -46,6 +46,11 @@ const OTAU = () => {
                 onUploadProgress: (progressEvent) => {
                     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                     setStatus(`Uploading: ${percentCompleted}%`);
+                    if (percentCompleted === 100) {
+                        setTimeout(() => {
+                            setStatus('Installing firmware...');
+                        }, 2000);
+                    }
                 },
                 timeout: 30000
             });
