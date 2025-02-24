@@ -315,6 +315,12 @@ void GRBLtest(String setting, bool mode){
   myPrgVar.end();
 }
 
+//TO-DO function to start/stop spindle. With speed varying from 0-255. The enable should remain low for now. As to prevent exciting run away events.
+void spindle(bool isEnabled, int speed){
+  digitalWrite(spindleEnb, isEnabled);
+  analogWrite(spindlePWM, speed);
+}
+
 // Main Setup
 void setup() {
     //Pin modes. Will need any "extras" added in later
