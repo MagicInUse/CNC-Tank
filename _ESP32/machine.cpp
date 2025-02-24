@@ -109,7 +109,7 @@ void handleStatus() {
         Serial.println("Server address set to: " + serverAddress);
 
         // Send initial console message
-        sendConsoleMessage("blue", "Hello, I'm ready to go!");
+        sendConsoleMessage("info", "Hello, I'm ready to go!");
     }
 
     StaticJsonDocument<200> response;
@@ -193,7 +193,7 @@ void handleControl() {
     Serial.println("Speed: " + String(speed));
     Serial.println("Step: " + String(step));
     
-    sendConsoleMessage("blue", "Received command: Axis=" + axis + ", Direction=" + direction + ", Speed=" + String(speed) + ", Step=" + String(step));
+    sendConsoleMessage("info", "Received command: Axis=" + axis + ", Direction=" + direction + ", Speed=" + String(speed) + ", Step=" + String(step));
     
     StaticJsonDocument<200> response;
     response["status"] = "success";
