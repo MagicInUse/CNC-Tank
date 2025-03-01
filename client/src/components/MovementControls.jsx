@@ -89,55 +89,67 @@ const MovementControls = () => {
   };
   
   const toggleSpindle = async () => {
-    setSpindleOn(prev => {
-        const newState = !prev;
-        const command = { enable: newState };
+    const newState = !spindleOn;
+    const command = { enable: newState };
 
-        fetch('http://localhost:3001/api/control/spindle', {
+    try {
+        const response = await fetch('http://localhost:3001/api/control/spindle', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(command)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (newState) {
-                logResponse(`Spindle started at ${parseInt(spindleSpeed)}%`);
-            } else {
-                logError(`Spindle stopped`);
-            }
-        })
-        .catch(error => logError(`Error: ${error.message}`));
+        });
 
-        return newState;
-    });
+        if (!response.ok) {
+            const errorData = await response.json();
+            logError(`Failed to ${newState ? 'start' : 'stop'} spindle: ${errorData.message || 'Unknown error'}`);
+            return;
+        }
+
+        const data = await response.json();
+        setSpindleOn(newState);
+        
+        if (newState) {
+            logResponse(`Spindle started at ${parseInt(spindleSpeed)}%`);
+        } else {
+            logError(`Spindle stopped`); // Error for red text
+        }
+    } catch (error) {
+        logError(`Error toggling spindle: ${error.message}`);
+    }
 };
 
 const toggleLaser = async () => {
-    setLaserOn(prev => {
-        const newState = !prev;
-        const command = { enable: newState };
+    const newState = !laserOn;
+    const command = { enable: newState };
 
-        fetch('http://localhost:3001/api/control/laser', {
+    try {
+        const response = await fetch('http://localhost:3001/api/control/laser', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(command)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (newState) {
-                logResponse('Laser enabled');
-            } else {
-                logError('Laser disabled');
-            }
-        })
-        .catch(error => logError(`Error: ${error.message}`));
+        });
 
-        return newState;
-    });
+        if (!response.ok) {
+            const errorData = await response.json();
+            logError(`Failed to ${newState ? 'enable' : 'disable'} laser: ${errorData.message || 'Unknown error'}`);
+            return;
+        }
+
+        const data = await response.json();
+        setLaserOn(newState);
+        
+        if (newState) {
+            logResponse('Laser enabled');
+        } else {
+            logError('Laser disabled'); // Error for red text
+        }
+    } catch (error) {
+        logError(`Error toggling laser: ${error.message}`);
+    }
 };
 
 const handleSpindleSpeed = async (event) => {
