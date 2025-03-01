@@ -128,3 +128,9 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# .vscode from Arduino IDE Extension
+.vscode/
+
+# custom progress images folder
+.progress/
