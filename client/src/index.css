@@ -40,6 +40,12 @@
     background-color: #333333 !important;
   }
 
+  button:disabled {
+    opacity: 0.7 !important;
+    background-color: #ababab !important;
+    cursor: not-allowed !important;
+  }
+
   .console {
     width: 420px;
   }
@@ -67,5 +73,41 @@
   .no-spinners {
       -moz-appearance: textfield;
       appearance: textfield;
+  }
+
+  .throbberContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 800px;
+  }
+  
+  .throbber {
+    width: 69px;
+    height: 69px;
+    border: 10px solid #444;
+    border-top: 10px solid #22dd22;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    position: relative;
+    z-index: 50;
+  }
+
+  /* Override border widths based on size classes */
+  .throbber.w-4 {
+    border-width: 2px;
+  }
+  
+  .throbber.w-6 {
+    border-width: 3px;
+  }
+  
+  .throbber.w-8 {
+    border-width: 4px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 }
