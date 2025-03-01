@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StopSVG, HomingSVG, HomedSVG, ArrowUpSVG, WifiSVG, NoWifiSVG, SpindleSVG } from '../assets/SVGs';
 import { useConsoleLog } from '../utils/ConsoleLog';
 import { useMachine } from '../context/MachineContext';
+import LoadingButton from './LoadingButton';
 
 // TODO: .nc file destructure in FileCompare or ObjectsInfo
 
@@ -17,6 +18,8 @@ const MovementControls = () => {
   const [spindleSpeed, setSpindleSpeed] = useState(100);
   const [isDragging, setIsDragging] = useState(false);
   const [thumbPosition, setThumbPosition] = useState(0);
+  const [isSpindleLoading, setIsSpindleLoading] = useState(false);
+  const [isLaserLoading, setIsLaserLoading] = useState(false);
   
   const speedMenuRef = useRef(null);
   const stepMenuRef = useRef(null);
@@ -92,6 +95,7 @@ const MovementControls = () => {
     const newState = !spindleOn;
     const command = { enable: newState };
 
+    setIsSpindleLoading(true);
     try {
         const response = await fetch('http://localhost:3001/api/control/spindle', {
             method: 'POST',
@@ -117,6 +121,8 @@ const MovementControls = () => {
         }
     } catch (error) {
         logError(`Error toggling spindle: ${error.message}`);
+    } finally {
+        setIsSpindleLoading(false);
     }
 };
 
@@ -124,6 +130,7 @@ const toggleLaser = async () => {
     const newState = !laserOn;
     const command = { enable: newState };
 
+    setIsLaserLoading(true);
     try {
         const response = await fetch('http://localhost:3001/api/control/laser', {
             method: 'POST',
@@ -149,6 +156,8 @@ const toggleLaser = async () => {
         }
     } catch (error) {
         logError(`Error toggling laser: ${error.message}`);
+    } finally {
+        setIsLaserLoading(false);
     }
 };
 
@@ -330,15 +339,16 @@ const handleSpindleSpeed = async (event) => {
             )}
         </div>
         {/* Laser button */}
-        <button
+        <LoadingButton
           onClick={toggleLaser}
+          isLoading={isLaserLoading}
           className={`w-full px-4 py-3 text-white border rounded-lg hover:bg-gray-700
             ${laserOn 
               ? '!border-green-600 hover:!border-green-600' 
               : '!border-red-900 hover:!border-red-900'}`}
         >
           Laser {laserOn ? 'On' : 'Off'}
-        </button>
+        </LoadingButton>
       </div>
       {/* Spindle Control */}
       <div className="flex flex-col items-center justify-end space-y-2 m-2">
@@ -379,15 +389,16 @@ const handleSpindleSpeed = async (event) => {
             </span>
           )}
         </div>
-        <button
+        <LoadingButton
           onClick={toggleSpindle}
+          isLoading={isSpindleLoading}
           className={`w-12 h-12 text-sm text-white border rounded-lg hover:bg-gray-700 
             ${spindleOn 
               ? '!border-green-600 hover:!border-green-600' 
               : '!border-red-900 hover:!border-red-900'}`}
         >
           <SpindleSVG />
-        </button>
+        </LoadingButton>
       </div>
       {/* Z Control */}
       <div className="flex flex-col items-center mr-2">
