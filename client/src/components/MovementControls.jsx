@@ -228,38 +228,33 @@ const handleSpindleSpeedCommit = async () => {
     
     loadingSetter(true);
     try {
-      const command = {
-        axis: 'z',
-        direction: direction.toLowerCase(),
-        speed: selectedSpeed,
-        step: selectedStep
-      };
-  
-      logRequest(`Sending Z-axis command: ${direction} (Speed: ${selectedSpeed}, Step: ${selectedStep})`);
-      
-      // Updated to use the generic endpoint
-      const response = await fetch('http://localhost:3001/api/control', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(command)
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        logError(`Failed to move Z-axis ${direction}: ${errorData.message || 'Unknown error'}`);
-        return;
-      }
+        // Calculate the depth value based on direction and step size
+        const depthChange = isUp ? selectedStep : -selectedStep;
+        
+        logRequest(`Sending Z-axis command: ${direction} (Step: ${selectedStep}mm)`);
+        
+        const response = await fetch('http://localhost:3001/api/control/spindle/depth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ depth: depthChange })
+        });
 
-      const data = await response.json();
-      logResponse(`Z-axis moved ${direction} successfully`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            logError(`Failed to move Z-axis ${direction}: ${errorData.message || 'Unknown error'}`);
+            return;
+        }
+
+        const data = await response.json();
+        logResponse(`Z-axis moved ${direction} successfully`);
     } catch (error) {
-      logError(`Error executing Z-axis command: ${error.message}`);
+        logError(`Error executing Z-axis command: ${error.message}`);
     } finally {
-      loadingSetter(false);
+        loadingSetter(false);
     }
-  };
+};
 
   // Update the handleMovementHomeComplete function
   const handleMovementHomeComplete = () => {
