@@ -8,7 +8,38 @@ import logo from '../assets/logo.png';  // Add this import
 const GRBL_DESCRIPTIONS = {
     "$0": "Step pulse time in microseconds",
     "$1": "Step idle delay in milliseconds",
-    // ...existing GRBL_DESCRIPTIONS...
+    "$2": "Step pulse invert mask",
+    "$3": "Step direction invert mask",
+    "$4": "Invert step enable pin",
+    "$5": "Invert limit pins",
+    "$6": "Invert probe pin",
+    "$10": "Status report options mask",
+    "$11": "Junction deviation in millimeters",
+    "$12": "Arc tolerance in millimeters",
+    "$13": "Report in inches",
+    "$20": "Soft limits enabled",
+    "$21": "Hard limits enabled",
+    "$22": "Homing cycle enabled",
+    "$23": "Homing direction invert mask",
+    "$24": "Homing feed rate in mm/min",
+    "$25": "Homing seek rate in mm/min",
+    "$26": "Homing debounce delay in milliseconds",
+    "$27": "Homing pull-off in millimeters",
+    "$30": "Maximum spindle speed in RPM",
+    "$31": "Minimum spindle speed in RPM",
+    "$32": "Laser mode enabled",
+    "$100": "X-axis steps per millimeter",
+    "$101": "Y-axis steps per millimeter",
+    "$102": "Z-axis steps per millimeter",
+    "$110": "X-axis maximum rate in mm/min",
+    "$111": "Y-axis maximum rate in mm/min",
+    "$112": "Z-axis maximum rate in mm/min",
+    "$120": "X-axis acceleration in mm/sec²",
+    "$121": "Y-axis acceleration in mm/sec²",
+    "$122": "Z-axis acceleration in mm/sec²",
+    "$130": "X-axis maximum travel in millimeters",
+    "$131": "Y-axis maximum travel in millimeters",
+    "$132": "Z-axis maximum travel in millimeters"
 };
 
 const ConfigMenu = () => {
@@ -223,13 +254,13 @@ const ConfigMenu = () => {
                 }));
 
                 logResponse(`Successfully updated ${key}`);
-                logRequest(`${description}`);
-                logResponse(`Old value: ${oldValue}`);
+                logRequest(`${description}`); // Request for blue text
+                logError(`Old value: ${oldValue}`); // Error for red text
                 logResponse(`New value: ${newValue}`);
             }
         } catch (error) {
             logError(`Failed to update ${key} (${description})`);
-            logRequest(`Attempted to change: ${oldValue} → ${newValue}`);
+            logRequest(`Attempted to change: ${oldValue} → ${newValue}`); // Request for blue text
             logError(`Error: ${error.response?.data?.error || error.message}`);
         } finally {
             setLoadingSetting(null);
@@ -277,7 +308,7 @@ const ConfigMenu = () => {
 
                 logResponse(`Successfully updated ${editingKey}`);
                 logRequest(`${description}`); // Request for blue text
-                logResponse(`Old value: ${oldValue}${unit}`);
+                logError(`Old value: ${oldValue}`); // Error for red text
                 logResponse(`New value: ${processedValue}${unit}`);
             }
         } catch (error) {
