@@ -337,26 +337,23 @@ void handleSpindleZDepth() {
     int speed = doc["command"]["speed"];
     int step = doc["command"]["step"];
 
-    Serial.println("Received Z-axis command:");
-    Serial.println("Direction: " + direction);
-    Serial.println("Speed: " + String(speed));
-    Serial.println("Step: " + String(step));
+    // Make sure stepper is stopped before new command
+    zStepper->stopMove();
 
-    // Validate speed range (assuming steps per second)
-    if (speed < 100 || speed > 5000) {
-        server.send(400, "application/json", "{\"error\": \"Speed must be between 100 and 5000 steps/sec\"}");
-        return;
-    }
+    // Set movement parameters
+    zStepper->setAcceleration(1000);  // Set reasonable acceleration
+    zStepper->setSpeedInHz(speed);    // Set target speed
 
-    // Set movement direction
-    bool dirValue = (direction == "up") ? true : false;
-    zStepper->setDirectionPin(dirValue);
+    // Calculate actual steps based on direction
+    long actualSteps = (direction == "up") ? step : -step;
 
-    // Configure movement parameters
-    zStepper->setSpeedInHz(speed);
-    
     // Move the specified number of steps
-    zStepper->move(step);
+    zStepper->move(actualSteps);
+
+    // Wait for motion to complete (optional - be careful with blocking operations)
+    // while (zStepper->isRunning()) {
+    //     delay(10);
+    // }
 
     sendConsoleMessage("info", "Z-axis movement: Direction=" + direction + 
                               ", Step=" + String(step) + 
@@ -500,7 +497,7 @@ void handleGrblSetup(){
       Serial.println("Keys are already present!");
       return;
   }
-  //Settings 2, 3, 4, 5, 6, 26, 32 are all non - use scenarios for the time being.
+  // Settings 2, 3, 4, 5, 6, 26, 32 are all non - use scenarios for the time being.
   else {
     myPrgVar.putInt("$0", 10); // Step pulse time, microseconds
     myPrgVar.putInt("$1", 25); // Step idle delay, milliseconds
@@ -538,6 +535,104 @@ void handleGrblSetup(){
     myPrgVar.putFloat("$132", 200.000); // Z-axis maximum travel, millimeters
   }
    myPrgVar.end();
+}
+
+void handleGrblStatus() {
+    myPrgVar.begin("GBRL", true);
+    
+    StaticJsonDocument<1024> response;
+    
+    response["$0"] = myPrgVar.getInt("$0");
+    response["$1"] = myPrgVar.getInt("$1");
+    response["$2"] = myPrgVar.getShort("$2");
+    response["$3"] = myPrgVar.getShort("$3");
+    response["$4"] = myPrgVar.getBool("$4");
+    response["$5"] = myPrgVar.getBool("$5");
+    response["$6"] = myPrgVar.getBool("$6");
+    response["$10"] = myPrgVar.getShort("$10");
+    response["$11"] = myPrgVar.getFloat("$11");
+    response["$12"] = myPrgVar.getFloat("$12");
+    response["$13"] = myPrgVar.getBool("$13");
+    response["$20"] = myPrgVar.getBool("$20");
+    response["$21"] = myPrgVar.getBool("$21");
+    response["$22"] = myPrgVar.getBool("$22");
+    response["$23"] = myPrgVar.getShort("$23");
+    response["$24"] = myPrgVar.getFloat("$24");
+    response["$25"] = myPrgVar.getFloat("$25");
+    response["$26"] = myPrgVar.getInt("$26");
+    response["$27"] = myPrgVar.getFloat("$27");
+    response["$30"] = myPrgVar.getInt("$30");
+    response["$31"] = myPrgVar.getInt("$31");
+    response["$32"] = myPrgVar.getBool("$32");
+    response["$100"] = myPrgVar.getFloat("$100");
+    response["$101"] = myPrgVar.getFloat("$101");
+    response["$102"] = myPrgVar.getFloat("$102");
+    response["$110"] = myPrgVar.getFloat("$110");
+    response["$111"] = myPrgVar.getFloat("$111");
+    response["$112"] = myPrgVar.getFloat("$112");
+    response["$120"] = myPrgVar.getFloat("$120");
+    response["$121"] = myPrgVar.getFloat("$121");
+    response["$122"] = myPrgVar.getFloat("$122");
+    response["$130"] = myPrgVar.getFloat("$130");
+    response["$131"] = myPrgVar.getFloat("$131");
+    response["$132"] = myPrgVar.getFloat("$132");
+    
+    myPrgVar.end();
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
+}
+
+void handleGrblUpdate() {
+    if (server.hasArg("plain") == false) {
+        server.send(400, "application/json", "{\"error\": \"No data received\"}");
+        return;
+    }
+
+    String body = server.arg("plain");
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
+        return;
+    }
+
+    if (!doc.containsKey("key") || !doc.containsKey("value")) {
+        server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
+        return;
+    }
+
+    const char* key = doc["key"];
+    float value = doc["value"];
+
+    myPrgVar.begin("GBRL", false);
+    
+    // Store value based on the setting type
+    if (String(key) == "$0" || String(key) == "$1" || String(key) == "$26" || 
+        String(key) == "$30" || String(key) == "$31") {
+        myPrgVar.putInt(key, (int)value);
+    } else if (String(key) == "$2" || String(key) == "$3" || String(key) == "$10" || 
+               String(key) == "$23") {
+        myPrgVar.putShort(key, (short)value);
+    } else if (String(key) == "$4" || String(key) == "$5" || String(key) == "$6" || 
+               String(key) == "$13" || String(key) == "$20" || String(key) == "$21" || 
+               String(key) == "$22" || String(key) == "$32") {
+        myPrgVar.putBool(key, (bool)value);
+    } else {
+        myPrgVar.putFloat(key, value);
+    }
+    
+    myPrgVar.end();
+    
+    StaticJsonDocument<200> response;
+    response["status"] = "success";
+    response[key] = value;
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
 }
 
 // Main Setup
@@ -638,6 +733,8 @@ void setup() {
 
     // Endpoint Initialization
     server.on("/api/status", HTTP_GET, handleStatus);
+    server.on("/api/config/grbl", HTTP_GET, handleGrblStatus);
+    server.on("/api/config/grbl", HTTP_POST, handleGrblUpdate);
     server.on("/api/test-data", HTTP_GET, handleTestData);
     server.on("/api/control", HTTP_POST, handleControl);
     server.on("/api/laser", HTTP_POST, handleLaser);

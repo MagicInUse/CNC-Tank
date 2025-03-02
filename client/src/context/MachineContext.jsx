@@ -14,6 +14,7 @@ export const MachineProvider = ({ children }) => {
     const [position, setPosition] = useState({ x: 0, y: 0, z: 0, theta: 0 });
     const [stockSize, setStockSize] = useState(defaultStockSize);
     const [status, setStatus] = useState('unknown'); // 'unknown', 'connected', 'failed'
+    const [grblSettings, setGrblSettings] = useState(null);
 
     // Log initial stock size after component mounts
     useEffect(() => {
@@ -37,8 +38,19 @@ export const MachineProvider = ({ children }) => {
         // logResponse(`Stock size updated to: ${JSON.stringify(limitedStockSize)}`);
     };
 
+    const value = {
+        position, 
+        setPosition, 
+        stockSize, 
+        setStockSize: setLimitedStockSize, 
+        status, 
+        setStatus,
+        grblSettings,
+        setGrblSettings
+    };
+
     return (
-        <MachineContext.Provider value={{ position, setPosition, stockSize, setStockSize: setLimitedStockSize, status, setStatus }}>
+        <MachineContext.Provider value={value}>
             {children}
         </MachineContext.Provider>
     );

@@ -11,10 +11,14 @@ const ConfigMenu = () => {
     const [vacuumOnly, setVacuumOnly] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState('unknown'); // 'unknown', 'connected', 'failed'
     const [overrideDNS, setOverrideDNS] = useState(false);
+    const { setStatus, grblSettings, setGrblSettings } = useMachine();
+    const [showGrblSettings, setShowGrblSettings] = useState(false);
+    const [editingKey, setEditingKey] = useState(null);
+    const [hasChanges, setHasChanges] = useState(false);
+    const [editValue, setEditValue] = useState('');
 
     // Add Console log hooks
     const { logRequest, logResponse, logError } = useConsoleLog();
-    const { setStatus } = useMachine();
 
     // Add debounced ping function after handleIPChange
     useEffect(() => {
@@ -160,6 +164,108 @@ const ConfigMenu = () => {
         }
     };
 
+    // Add GRBL settings fetching
+    const fetchGrblSettings = async () => {
+        try {
+            const response = await axios.get('http://localhost:3001/api/config/grbl');
+            setGrblSettings(response.data.settings);
+            logResponse('GRBL settings loaded');
+        } catch (error) {
+            logError(`Failed to load GRBL settings: ${error.message}`);
+        }
+    };
+
+    // Fetch GRBL settings when connection status changes to 'connected'
+    useEffect(() => {
+        if (connectionStatus === 'connected') {
+            fetchGrblSettings();
+        }
+    }, [connectionStatus]);
+
+    const handleSettingClick = (key, value) => {
+        setEditingKey(key);
+        setEditValue(String(value));
+    };
+
+    const handleSettingChange = (e) => {
+        setEditValue(e.target.value);
+        setHasChanges(true);
+    };
+
+    const handleSettingBlur = async () => {
+        if (!editingKey || !hasChanges) {
+            setEditingKey(null);
+            return;
+        }
+
+        try {
+            const response = await axios.post('http://localhost:3001/api/config/grbl', {
+                key: editingKey,
+                value: Number(editValue)
+            });
+
+            if (response.data.status === 'success') {
+                // Update local state with new value
+                setGrblSettings(prev => ({
+                    ...prev,
+                    [editingKey]: {
+                        ...prev[editingKey],
+                        value: Number(editValue)
+                    }
+                }));
+                logResponse(`Updated ${editingKey} to ${editValue}`);
+            }
+        } catch (error) {
+            logError(`Failed to update setting: ${error.message}`);
+            // Revert to original value
+            setEditValue(String(grblSettings[editingKey].value));
+        }
+
+        setEditingKey(null);
+        setHasChanges(false);
+    };
+
+    const renderGrblSettings = () => {
+        if (!grblSettings) return null;
+
+        return (
+            <div className="mt-4 max-h-96 overflow-y-auto">
+                <h4 className="text-md font-semibold mb-2">GRBL Settings</h4>
+                <div className="space-y-1">
+                    {Object.entries(grblSettings).map(([key, setting]) => (
+                        <div 
+                            key={key} 
+                            className="flex items-center justify-between text-sm hover:bg-gray-700/80 p-1 rounded transition-colors"
+                            title={setting.description}
+                            onClick={() => handleSettingClick(key, setting.value)}
+                        >
+                            <span className="font-mono">{key}</span>
+                            <div className="flex items-center">
+                                {editingKey === key ? (
+                                    <input
+                                        type="text"
+                                        value={editValue}
+                                        onChange={handleSettingChange}
+                                        onBlur={handleSettingBlur}
+                                        className="w-20 px-1 bg-gray-800 border border-gray-600 rounded"
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <span className="font-mono">{setting.value}</span>
+                                )}
+                                {setting.unit && (
+                                    <span className="text-gray-500 ml-1 text-xs">
+                                        {setting.unit}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <>
             {showConfig ? (
@@ -218,10 +324,28 @@ const ConfigMenu = () => {
                             />
                             <span className="ml-2">Vacuum</span>
                         </label>
+                        <label className="flex items-center cursor-pointer mt-2">
+                            <input 
+                                type="checkbox" 
+                                className="form-checkbox"
+                                checked={showGrblSettings}
+                                onChange={(e) => setShowGrblSettings(e.target.checked)}
+                            />
+                            <span className="ml-2">Show GRBL Settings</span>
+                        </label>
+
+                        {showGrblSettings && renderGrblSettings()}
                     </div>
                     <div className="flex justify-center">
-                        <button type="button" onClick={() => setShowConfig(false)} className="mt-4 px-4 py-2 transition-colors">
-                            Close
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                setShowConfig(false);
+                                setHasChanges(false);
+                            }} 
+                            className="mt-4 px-4 py-2 transition-colors"
+                        >
+                            {hasChanges ? 'Update' : 'Close'}
                         </button>
                     </div>
                 </div>
