@@ -15,7 +15,7 @@ const MovementControls = () => {
   const [showStepMenu, setShowStepMenu] = useState(false);
   const [laserOn, setLaserOn] = useState(false);
   const [spindleOn, setSpindleOn] = useState(false);
-  const [spindleSpeed, setSpindleSpeed] = useState(100);
+  const [spindleSpeed, setSpindleSpeed] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [thumbPosition, setThumbPosition] = useState(0);
   const [isSpindleLoading, setIsSpindleLoading] = useState(false);
