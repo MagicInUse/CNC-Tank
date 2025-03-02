@@ -44,8 +44,10 @@
 #define spindleEnb 16
 #define outletEnb 17
 
-//Spindle PWM pin
+//Spindle PWM pin - and PWM properties.
 #define spindlePWM 2
+#define analogFreq 1000
+#define analogRes 8 
 
 //Accesories (I2C or other Options)
 #define laser 4
@@ -297,7 +299,7 @@ void handleSpindleSpeed() {
         return;
     }
 
-    analogWrite(spindlePWM, map(speed, 0, 100, 0, 255));
+    ledcWrite(spindlePWM, map(speed, 0, 100, 0, 255));
 
     StaticJsonDocument<200> response;
     response["status"] = "success";
@@ -539,6 +541,9 @@ void setup() {
     digitalWrite(spindlePWM, 0);
     digitalWrite(outletEnb, 0);
     digitalWrite(laser, 0);
+
+    //Configure Analogwrite Fucntionality
+    ledcAttach(spindlePWM, analogFreq, analogRes);
     
     // For tethered debugging
     Serial.begin(115200);
