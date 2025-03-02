@@ -169,7 +169,7 @@ const ConfigMenu = () => {
                         <label className="flex items-center cursor-pointer">
                             <input 
                                 type="checkbox" 
-                                className="form-checkbox h-4 w-4"
+                                className="form-checkbox"
                                 checked={overrideDNS}
                                 onChange={handleOverrideDNSChange}
                             />
@@ -203,7 +203,7 @@ const ConfigMenu = () => {
                         <label className="flex items-center cursor-pointer">
                             <input 
                                 type="checkbox" 
-                                className="form-checkbox h-4 w-4"
+                                className="form-checkbox"
                                 checked={vacuumAndSpindle}
                                 onChange={handleVacuumAndSpindleChange}
                             />
@@ -212,7 +212,7 @@ const ConfigMenu = () => {
                         <label className="flex items-center cursor-pointer">
                             <input 
                                 type="checkbox" 
-                                className="form-checkbox h-4 w-4"
+                                className="form-checkbox"
                                 checked={vacuumOnly}
                                 onChange={handleVacuumOnlyChange}
                             />
