@@ -537,19 +537,7 @@ void handleGrblSetup(){
     myPrgVar.putFloat("$131", 200.000); // Y-axis maximum travel, millimeters
     myPrgVar.putFloat("$132", 200.000); // Z-axis maximum travel, millimeters
   }
-  myPrgVar.end();
-}
-
-//TO-DO expand this function to be able to respond to a server. On inital connect.
-//Create a function that iterates through keys in the namespcae GRBL and prints them to the Serial Monitor for Testing.
-void GRBLtest(String setting, bool mode){
-  myPrgVar.begin("GBRL", mode);
-  float storedVal = myPrgVar.getFloat(setting.c_str(), 0);
-  Serial.print("Setting at key: ");
-  Serial.print(setting);
-  Serial.print(" is: ");
-  Serial.println(storedVal);
-  myPrgVar.end();
+   myPrgVar.end();
 }
 
 // Main Setup
@@ -633,12 +621,6 @@ void setup() {
 
     //Test for the existance of and/or create the GRBL variable map. Seperate function.
     handleGrblSetup();
-
-    //Print three samples (for a sanity check)
-    GRBLtest("$1", true);
-    GRBLtest("$121", true);
-    GRBLtest("$132", true);
-
 
     //Run wifi. 
     WiFi.mode(WIFI_AP_STA);
