@@ -327,7 +327,7 @@ void handleSpindleZDepth() {
     }
 
     // Validate all required parameters
-    if (!doc.containsKey("depth") || 
+    if (!doc.containsKey("step") || 
         !doc.containsKey("direction") || 
         !doc.containsKey("speed")) {
         server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
@@ -335,7 +335,7 @@ void handleSpindleZDepth() {
     }
 
     //replace depth with step TODO
-    int depth = doc["depth"].as<int>();
+    int step = doc["step"].as<int>();
     String direction = doc["direction"].as<String>();
     int speed = doc["speed"].as<int>();
 
@@ -353,13 +353,13 @@ void handleSpindleZDepth() {
     zStepper->setSpeedInHz(speed);
     
     // Move the specified number of steps
-    zStepper->move(depth);
+    zStepper->move(step);
 
     // Send response
     StaticJsonDocument<200> response;
     response["status"] = "success";
     response["movement"] = {
-        {"depth", depth},
+        {"step", step},
         {"direction", direction},
         {"speed", speed}
     };
@@ -369,7 +369,7 @@ void handleSpindleZDepth() {
     
     // Send success message to console
     sendConsoleMessage("info", "Z-axis movement: Direction=" + direction + 
-                              ", Depth=" + String(depth) + 
+                              ", Step=" + String(step) + 
                               ", Speed=" + String(speed));
                               
     server.send(200, "application/json", responseStr);
