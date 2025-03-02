@@ -16,6 +16,7 @@ const MovementControls = () => {
   const [laserOn, setLaserOn] = useState(false);
   const [spindleOn, setSpindleOn] = useState(false);
   const [spindleSpeed, setSpindleSpeed] = useState(0);
+  const [lastSuccessfulSpindleSpeed, setLastSuccessfulSpindleSpeed] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [thumbPosition, setThumbPosition] = useState(0);
   const [isSpindleLoading, setIsSpindleLoading] = useState(false);
@@ -182,6 +183,7 @@ const handleSpindleSpeedChange = (event) => {
 const handleSpindleSpeedCommit = async () => {
     setIsSpindleSpeedLoading(true);
     const command = { speed: spindleSpeed };
+    const attemptedSpeed = spindleSpeed; // Store attempted speed for error message
 
     try {
         logRequest(`Sending spindle speed change to ${spindleSpeed}%`);
@@ -196,15 +198,25 @@ const handleSpindleSpeedCommit = async () => {
         if (!response.ok) {
             const errorData = await response.json();
             logError(`Failed to set spindle speed: ${errorData.message || 'Unknown error'}`);
+            // Revert to last successful speed
+            setSpindleSpeed(lastSuccessfulSpindleSpeed);
+            setThumbPosition(((100 - lastSuccessfulSpindleSpeed) / 100) * 80);
+            logError(`Reverting speed from ${attemptedSpeed}% to ${lastSuccessfulSpindleSpeed}%`);
             return;
         }
 
+        // Update last successful speed only after successful API call
+        setLastSuccessfulSpindleSpeed(spindleSpeed);
         logResponse(`Spindle speed set to ${spindleSpeed}%`);
         if (spindleOn) {
             logResponse(`Running spindle updated to ${spindleSpeed}%`);
         }
     } catch (error) {
         logError(`Error setting spindle speed: ${error.message}`);
+        // Revert to last successful speed on error
+        setSpindleSpeed(lastSuccessfulSpindleSpeed);
+        setThumbPosition(((100 - lastSuccessfulSpindleSpeed) / 100) * 80);
+        logError(`Reverting speed from ${attemptedSpeed}% to ${lastSuccessfulSpindleSpeed}%`);
     } finally {
         setIsSpindleSpeedLoading(false);
     }
