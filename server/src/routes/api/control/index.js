@@ -4,7 +4,7 @@ import { sendCommand, toggleLaser, toggleSpindle, setSpindleSpeed, setSpindleZDe
 const controlRouter = express.Router();
 
 // /api/control/
-controlRouter.post('/', sendCommand);
+controlRouter.post('/', sendCommand); // Send command to the machine - generic
 controlRouter.post('/laser', toggleLaser);
 controlRouter.post('/spindle', toggleSpindle);
 controlRouter.post('/spindle/speed', setSpindleSpeed);

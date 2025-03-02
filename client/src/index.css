@@ -62,7 +62,7 @@
   /* Hide scrollbar for IE, Edge and Firefox */
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
-    /* scrollbar-width: none; Firefox stylelint-disable-line This line will always be angry apparently */
+    /* scrollbar-width: none; /* Firefox stylelint-disable-line This line will always be angry apparently */
   }
 
   .no-spinners::-webkit-inner-spin-button,
@@ -76,10 +76,11 @@
   }
 
   .throbberContainer {
+    position: absolute;
+    inset: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 800px;
   }
   
   .throbber {
