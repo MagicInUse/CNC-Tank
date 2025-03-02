@@ -20,6 +20,10 @@ const MovementControls = () => {
   const [thumbPosition, setThumbPosition] = useState(0);
   const [isSpindleLoading, setIsSpindleLoading] = useState(false);
   const [isLaserLoading, setIsLaserLoading] = useState(false);
+  const [isZUpLoading, setIsZUpLoading] = useState(false);
+  const [isZDownLoading, setIsZDownLoading] = useState(false);
+  const [isSpindleSpeedLoading, setIsSpindleSpeedLoading] = useState(false);
+  const spindleSpeedTimeout = useRef(null);
   
   const speedMenuRef = useRef(null);
   const stepMenuRef = useRef(null);
@@ -96,6 +100,8 @@ const MovementControls = () => {
     const command = { enable: newState };
 
     setIsSpindleLoading(true);
+    logRequest(`Sending spindle ${newState ? 'start' : 'stop'} command...`);
+    
     try {
         const response = await fetch('http://localhost:3001/api/control/spindle', {
             method: 'POST',
@@ -131,6 +137,8 @@ const toggleLaser = async () => {
     const command = { enable: newState };
 
     setIsLaserLoading(true);
+    logRequest(`Sending laser ${newState ? 'enable' : 'disable'} command...`);
+
     try {
         const response = await fetch('http://localhost:3001/api/control/laser', {
             method: 'POST',
@@ -150,9 +158,9 @@ const toggleLaser = async () => {
         setLaserOn(newState);
         
         if (newState) {
-            logResponse('Laser enabled');
+            logResponse('Laser enabled successfully');
         } else {
-            logError('Laser disabled'); // Error for red text
+            logError('Laser disabled successfully'); // Error for red text
         }
     } catch (error) {
         logError(`Error toggling laser: ${error.message}`);
@@ -161,42 +169,46 @@ const toggleLaser = async () => {
     }
 };
 
-const handleSpindleSpeed = async (event) => {
+// Track speed changes without sending updates
+const handleSpindleSpeedChange = (event) => {
     const speed = parseInt(event.target.value);
     setSpindleSpeed(speed);
-
-    const command = { speed };
-
-    fetch('http://localhost:3001/api/control/spindle/speed', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(command)
-    })
-    .then(response => response.json())
-    .then(data => {
-        logResponse(`Spindle speed set to ${speed}%`);
-        if (spindleOn) {
-            logRequest(`Updating running spindle speed to ${speed}%`);
-        }
-    })
-    .catch(error => logError(`Error: ${error.message}`));
+    // Calculate thumb position based on value
+    const position = ((100 - speed) / 100) * 80; // 80px is slider height
+    setThumbPosition(position);
 };
 
-  // Track speed changes without sending updates
-  const handleSpindleSpeedChange = (event) => {
-    const speed = parseInt(event.target.value);
-    setSpindleSpeed(speed);
-  };
+// Send update when slider movement ends
+const handleSpindleSpeedCommit = async () => {
+    setIsSpindleSpeedLoading(true);
+    const command = { speed: spindleSpeed };
 
-  // Send update when slider movement ends
-  const handleSpindleSpeedCommit = () => {
-    logResponse(`Spindle speed set to ${spindleSpeed}%`);
-    if (spindleOn) {
-      logRequest(`Updating running spindle speed to ${spindleSpeed}%`);
+    try {
+        logRequest(`Sending spindle speed change to ${spindleSpeed}%`);
+        const response = await fetch('http://localhost:3001/api/control/spindle/speed', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(command)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            logError(`Failed to set spindle speed: ${errorData.message || 'Unknown error'}`);
+            return;
+        }
+
+        logResponse(`Spindle speed set to ${spindleSpeed}%`);
+        if (spindleOn) {
+            logResponse(`Running spindle updated to ${spindleSpeed}%`);
+        }
+    } catch (error) {
+        logError(`Error setting spindle speed: ${error.message}`);
+    } finally {
+        setIsSpindleSpeedLoading(false);
     }
-  };
+};
 
   const handleSpeedSelect = (speed) => {
     setSelectedSpeed(speed);
@@ -211,6 +223,10 @@ const handleSpindleSpeed = async (event) => {
   };
 
   const handleZCommand = async (direction) => {
+    const isUp = direction === 'up';
+    const loadingSetter = isUp ? setIsZUpLoading : setIsZDownLoading;
+    
+    loadingSetter(true);
     try {
       const command = {
         axis: 'z',
@@ -221,6 +237,7 @@ const handleSpindleSpeed = async (event) => {
   
       logRequest(`Sending Z-axis command: ${direction} (Speed: ${selectedSpeed}, Step: ${selectedStep})`);
       
+      // Updated to use the generic endpoint
       const response = await fetch('http://localhost:3001/api/control', {
         method: 'POST',
         headers: {
@@ -229,16 +246,21 @@ const handleSpindleSpeed = async (event) => {
         body: JSON.stringify(command)
       });
   
-      if (response.ok) {
-        logResponse(`Z-axis ${direction} command executed successfully`);
-      } else {
-        logError(`Failed to execute Z-axis ${direction} command`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        logError(`Failed to move Z-axis ${direction}: ${errorData.message || 'Unknown error'}`);
+        return;
       }
+
+      const data = await response.json();
+      logResponse(`Z-axis moved ${direction} successfully`);
     } catch (error) {
       logError(`Error executing Z-axis command: ${error.message}`);
+    } finally {
+      loadingSetter(false);
     }
   };
-  
+
   // Update the handleMovementHomeComplete function
   const handleMovementHomeComplete = () => {
     setTimeout(() => {
@@ -358,24 +380,20 @@ const handleSpindleSpeed = async (event) => {
             min="0"
             max="100"
             value={parseInt(spindleSpeed)}
-            onChange={(e) => {
-              handleSpindleSpeedChange(e);
-              // Calculate thumb position based on value
-              const value = parseInt(e.target.value);
-              const position = ((100 - value) / 100) * 80; // 80px is slider height
-              setThumbPosition(position);
-            }}
+            onChange={handleSpindleSpeedChange}
+            disabled={isSpindleSpeedLoading}
+            className={`absolute -bottom-12 w-28 h-12 -rotate-90 transform origin-bottom-left translate-x-6 -translate-y-6 
+                ${isSpindleSpeedLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             onMouseDown={() => setIsDragging(true)}
             onMouseUp={() => {
-              setIsDragging(false);
-              handleSpindleSpeedCommit();
+                setIsDragging(false);
+                handleSpindleSpeedCommit();
             }}
             onTouchStart={() => setIsDragging(true)}
             onTouchEnd={() => {
-              setIsDragging(false);
-              handleSpindleSpeedCommit();
+                setIsDragging(false);
+                handleSpindleSpeedCommit();
             }}
-            className="absolute -bottom-12 w-28 h-12 -rotate-90 transform origin-bottom-left translate-x-6 -translate-y-6"
           />
           {isDragging && (
             <span 
@@ -402,23 +420,27 @@ const handleSpindleSpeed = async (event) => {
       </div>
       {/* Z Control */}
       <div className="flex flex-col items-center mr-2">
-        <button 
-          type="button" 
-          className="w-12 h-14 p-2 rounded-lg flex items-center justify-center"
+        <LoadingButton 
           onClick={() => handleZCommand('up')}
+          isLoading={isZUpLoading}
+          className="w-12 h-14 rounded-lg flex items-center justify-center hover:bg-gray-700"
         >
-          <ArrowUpSVG className="w-full h-full" />
-        </button>
+          <div className="w-full h-full p-2">
+            <ArrowUpSVG className="w-6 h-12" />
+          </div>
+        </LoadingButton>
         <button type="button" className="w-12 h-12 mt-1 p-2 rounded-lg flex items-center justify-center">
           {getZCenterButtonSVG()}
         </button>
-        <button 
-          type="button" 
-          className="w-12 h-14 p-2 mt-1 rounded-lg flex items-center justify-center"
+        <LoadingButton 
           onClick={() => handleZCommand('down')}
+          isLoading={isZDownLoading}
+          className="w-12 h-14 mt-1 rounded-lg flex items-center justify-center hover:bg-gray-700"
         >
-          <ArrowUpSVG className="w-full h-full rotate-180" />
-        </button>
+          <div className="w-full h-full p-2">
+            <ArrowUpSVG className="w-6 h-12 rotate-180" />
+          </div>
+        </LoadingButton>
       </div>
       {/* Directional Control */}
       <div className="grid grid-cols-3 gap-2 w-40">
