@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useConsoleLog } from '../utils/ConsoleLog';
 import { useMachine } from '../context/MachineContext';
+import LoadingButton from './LoadingButton';
+import logo from '../assets/logo.png';  // Add this import
+
+const GRBL_DESCRIPTIONS = {
+    "$0": "Step pulse time in microseconds",
+    "$1": "Step idle delay in milliseconds",
+    // ...existing GRBL_DESCRIPTIONS...
+};
 
 const ConfigMenu = () => {
     const [showConfig, setShowConfig] = useState(false);
@@ -16,6 +24,7 @@ const ConfigMenu = () => {
     const [editingKey, setEditingKey] = useState(null);
     const [hasChanges, setHasChanges] = useState(false);
     const [editValue, setEditValue] = useState('');
+    const [loadingSetting, setLoadingSetting] = useState(null);
 
     // Add Console log hooks
     const { logRequest, logResponse, logError } = useConsoleLog();
@@ -182,9 +191,49 @@ const ConfigMenu = () => {
         }
     }, [connectionStatus]);
 
-    const handleSettingClick = (key, value) => {
-        setEditingKey(key);
-        setEditValue(String(value));
+    const handleSettingClick = (key, setting) => {
+        // Only set editing state for non-boolean values
+        if (setting.type !== 'bool') {
+            setEditingKey(key);
+            setEditValue(String(setting.value));
+        }
+    };
+
+    const handleBooleanChange = async (key, setting, checked) => {
+        setLoadingSetting(key);
+        const description = GRBL_DESCRIPTIONS[key];
+        const oldValue = setting.value;
+        const newValue = checked ? 1 : 0;
+
+        logRequest(`Updating ${key} (${description}): ${oldValue} → ${newValue}`);
+
+        try {
+            const response = await axios.post('http://localhost:3001/api/config/grbl', {
+                key: key,
+                value: newValue
+            });
+
+            if (response.data.status === 'success') {
+                setGrblSettings(prev => ({
+                    ...prev,
+                    [key]: {
+                        ...prev[key],
+                        value: newValue
+                    }
+                }));
+
+                logResponse(`Successfully updated ${key}`);
+                logRequest(`${description}`);
+                logResponse(`Old value: ${oldValue}`);
+                logResponse(`New value: ${newValue}`);
+            }
+        } catch (error) {
+            logError(`Failed to update ${key} (${description})`);
+            logRequest(`Attempted to change: ${oldValue} → ${newValue}`);
+            logError(`Error: ${error.response?.data?.error || error.message}`);
+        } finally {
+            setLoadingSetting(null);
+        }
     };
 
     const handleSettingChange = (e) => {
@@ -198,31 +247,51 @@ const ConfigMenu = () => {
             return;
         }
 
+        setLoadingSetting(editingKey);
+        const description = GRBL_DESCRIPTIONS[editingKey];
+        const oldValue = grblSettings[editingKey].value;
+        const unit = grblSettings[editingKey].unit || '';
+        const type = grblSettings[editingKey].type;
+
+        // Convert editValue based on type
+        const processedValue = type === 'bool' ? 
+            Number(editValue === '1' || editValue === '1' || editValue === 'true') : 
+            Number(editValue);
+
+        logRequest(`Updating ${editingKey} (${description}): ${oldValue}${unit} → ${processedValue}${unit}`);
+
         try {
             const response = await axios.post('http://localhost:3001/api/config/grbl', {
                 key: editingKey,
-                value: Number(editValue)
+                value: processedValue
             });
 
             if (response.data.status === 'success') {
-                // Update local state with new value
                 setGrblSettings(prev => ({
                     ...prev,
                     [editingKey]: {
                         ...prev[editingKey],
-                        value: Number(editValue)
+                        value: processedValue
                     }
                 }));
-                logResponse(`Updated ${editingKey} to ${editValue}`);
+
+                logResponse(`Successfully updated ${editingKey}`);
+                logRequest(`${description}`); // Request for blue text
+                logResponse(`Old value: ${oldValue}${unit}`);
+                logResponse(`New value: ${processedValue}${unit}`);
             }
         } catch (error) {
-            logError(`Failed to update setting: ${error.message}`);
+            logError(`Failed to update ${editingKey} (${description})`);
+            logRequest(`Attempted to change: ${oldValue}${unit} → ${processedValue}${unit}`); // Request for blue text
+            logError(`Error: ${error.response?.data?.error || error.message}`);
+            
             // Revert to original value
             setEditValue(String(grblSettings[editingKey].value));
+        } finally {
+            setLoadingSetting(null);
+            setEditingKey(null);
+            setHasChanges(false);
         }
-
-        setEditingKey(null);
-        setHasChanges(false);
     };
 
     const renderGrblSettings = () => {
@@ -233,32 +302,50 @@ const ConfigMenu = () => {
                 <h4 className="text-md font-semibold mb-2">GRBL Settings</h4>
                 <div className="space-y-1">
                     {Object.entries(grblSettings).map(([key, setting]) => (
-                        <div 
-                            key={key} 
-                            className="flex items-center justify-between text-sm hover:bg-gray-700/80 p-1 rounded transition-colors"
-                            title={setting.description}
-                            onClick={() => handleSettingClick(key, setting.value)}
-                        >
-                            <span className="font-mono">{key}</span>
-                            <div className="flex items-center">
-                                {editingKey === key ? (
-                                    <input
-                                        type="text"
-                                        value={editValue}
-                                        onChange={handleSettingChange}
-                                        onBlur={handleSettingBlur}
-                                        className="w-20 px-1 bg-gray-800 border border-gray-600 rounded"
-                                        autoFocus
-                                    />
-                                ) : (
-                                    <span className="font-mono">{setting.value}</span>
-                                )}
-                                {setting.unit && (
-                                    <span className="text-gray-500 ml-1 text-xs">
-                                        {setting.unit}
-                                    </span>
-                                )}
-                            </div>
+                        <div key={key} className="group relative">
+                            <LoadingButton
+                                isLoading={loadingSetting === key}
+                                className="w-full flex items-center justify-between text-sm p-1 rounded transition-colors relative bg-transparent hover:bg-gray-700/80"
+                                onClick={() => setting.type !== 'bool' && handleSettingClick(key, setting)}
+                                loadingClassName="bg-gray-800/50"
+                            >
+                                <div className="flex items-center justify-between w-full gap-4">
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <span className="font-mono w-12 flex-shrink-0">{key}</span>
+                                        <span className="text-left text-xs text-gray-400 truncate">{setting.description}</span>
+                                    </div>
+                                    <div className="flex items-center flex-shrink-0">
+                                        {setting.type === 'bool' ? (
+                                            <input
+                                                type="checkbox"
+                                                checked={setting.value === 1}
+                                                onChange={(e) => {
+                                                    e.stopPropagation();
+                                                    handleBooleanChange(key, setting, !setting.value);
+                                                }}
+                                                className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                        ) : editingKey === key ? (
+                                            <input
+                                                type="text"
+                                                value={editValue}
+                                                onChange={handleSettingChange}
+                                                onBlur={handleSettingBlur}
+                                                className="w-20 px-1 bg-gray-800 border border-gray-600 rounded"
+                                                autoFocus
+                                            />
+                                        ) : (
+                                            <span className="font-mono">{setting.value}</span>
+                                        )}
+                                        {setting.unit && (
+                                            <span className="text-gray-500 ml-1 text-xs">
+                                                {setting.unit}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </LoadingButton>
                         </div>
                     ))}
                 </div>
@@ -269,10 +356,13 @@ const ConfigMenu = () => {
     return (
         <>
             {showConfig ? (
-                <div className="absolute top-10 right-10 p-4 border border-gray-400 rounded-lg shadow-lg z-50">
+                <div className="absolute top-10 right-10 p-4 border border-gray-400 rounded-lg shadow-lg z-50 min-w-[400px] max-w-[600px] max-h-[80vh] overflow-hidden">
+                    <div className="absolute top-2 -right-5 w-64 h-64 opacity-10 pointer-events-none">
+                        <img src={logo} alt="MagicApps Logo" className="object-contain w-full h-full" />
+                    </div>
                     <h3 className="text-lg font-semibold mb-2">Configuration</h3>
-                    <div className="space-y-2">
-                        <label className="flex items-center cursor-pointer">
+                    <div className="space-y-2 overflow-y-auto">
+                        <label className="flex items-center cursor-pointer w-fit">
                             <input 
                                 type="checkbox" 
                                 className="form-checkbox"
@@ -281,7 +371,7 @@ const ConfigMenu = () => {
                             />
                             <span className="ml-2">Override Default DNS</span>
                         </label>
-                        <label className="flex flex-col space-y-1">
+                        <label className="flex flex-col space-y-1 w-fit">
                             <span className="text-sm font-medium text-gray-500">
                             <div style={{ 
                                 height: '12px', 
@@ -306,7 +396,7 @@ const ConfigMenu = () => {
                                     ${isValid ? 'focus:ring-green-500 focus:border-green-600' : 'focus:ring-red-500 focus:border-red-600'}`}
                             />
                         </label>
-                        <label className="flex items-center cursor-pointer">
+                        <label className="flex items-center cursor-pointer w-fit">
                             <input 
                                 type="checkbox" 
                                 className="form-checkbox"
@@ -315,7 +405,7 @@ const ConfigMenu = () => {
                             />
                             <span className="ml-2">Vacuum & Spindle</span>
                         </label>
-                        <label className="flex items-center cursor-pointer">
+                        <label className="flex items-center cursor-pointer w-fit">
                             <input 
                                 type="checkbox" 
                                 className="form-checkbox"
@@ -324,7 +414,7 @@ const ConfigMenu = () => {
                             />
                             <span className="ml-2">Vacuum</span>
                         </label>
-                        <label className="flex items-center cursor-pointer mt-2">
+                        <label className="flex items-center cursor-pointer mt-2 w-fit">
                             <input 
                                 type="checkbox" 
                                 className="form-checkbox"
