@@ -88,7 +88,7 @@ const char* serverIndex = R"(
 // Endpoint handlers
 String serverAddress = ""; // Global variable to store the server address
 
-//TO-DO is this needed any longer? Might be able to remove this function.
+//Consider this function if space becomes a problem - otherwise, leave it as is.
 void handleTestData() {
     StaticJsonDocument<200> doc;
     // Get the internal temperature sensor reading
@@ -105,6 +105,7 @@ void handleTestData() {
     server.send(200, "application/json", response);
 }
 
+//Let the server no we are here!
 void handleStatus() {
     if (server.hasArg("serverAddress")) {
         serverAddress = server.arg("serverAddress");
@@ -122,7 +123,7 @@ void handleStatus() {
     server.send(200, "application/json", responseStr);
 }
 
-// Send a console message to the server
+// Send a console message to the server - for debugging through the client-visible console.
 void sendConsoleMessage(const String& type, const String& message) {
     if (serverAddress == "") {
         Serial.println("Server address not set. Cannot send console message.");
@@ -368,12 +369,6 @@ void handleSpindleZDepth() {
     server.send(200, "application/json", responseStr);
 }
 
-//TO-DO Add a function to handle the Z-probe.
-
-//TO-DO Add a function to the Z-Endstop
-
-//TO-DO Add a function to handle the outlet. M08 to enable, M09 to disable
-
 // OTA update handlers
 void handleUpdate() {
     server.sendHeader("Connection", "close");
@@ -488,7 +483,7 @@ void handleApiUpdatePost() {
     }
 }
 
-//TO-DO Select correct types for the keys. Not all keys are floats. Make sure to assign "N" for Null to unused settings.
+//Function checks for the first GRBL setting key:value pair. If it doesn't exist, it creates all the key value pairs for GRBL settings. If it does exist, it does nothing.
 //Create a namespace for GRBL. Or check for its existance.
 void handleGrblSetup(){
   myPrgVar.begin("GBRL", false);
@@ -537,6 +532,7 @@ void handleGrblSetup(){
    myPrgVar.end();
 }
 
+//On connection to the server, the server will send the current GRBL settings to the client.
 void handleGrblStatus() {
     myPrgVar.begin("GBRL", true);
     
@@ -584,6 +580,7 @@ void handleGrblStatus() {
     server.send(200, "application/json", responseStr);
 }
 
+//When the client sends a GRBL update, the server will update the GRBL settings with the new values.
 void handleGrblUpdate() {
     if (server.hasArg("plain") == false) {
         server.send(400, "application/json", "{\"error\": \"No data received\"}");
@@ -633,6 +630,34 @@ void handleGrblUpdate() {
     String responseStr;
     serializeJson(response, responseStr);
     server.send(200, "application/json", responseStr);
+}
+
+/*
+    FastAccelStepper does in fact move asynchronously. However, any attempt to update the position that it is moving to prior to the previous command being completed will result in the stepper
+    stopping and ignoring previous commands.
+
+    I.E
+    zStepper->move(1000);
+    zStepper->move(2000);
+
+    rightStepper->move(1000);
+    rightStepper->move(2000);
+
+    ...will result in the stepper(s) doing nothing.
+
+    I.E
+    zStepper->move(1000);
+    zStepper->move(1000);
+    ...completeCheck...
+    rightStepper->move(500);
+    rightStepper->move(500);
+
+    ...will result in the expected forward movement of all the steppers. Followed by the reverse movement of the steppers.
+*/
+
+//Function needs to accept the axis of movement, the direction of movement, the step count, and the speed in Us.
+bool stepperQueueUp(){
+    return true;
 }
 
 // Main Setup
