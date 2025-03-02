@@ -1,19 +1,19 @@
 # GRBL Configuration Settings
 
-- `$0=10`: Step pulse time, microseconds
-- `$1=25`: Step idle delay, milliseconds
-- `$2=0`: Step pulse invert, mask
-- `$3=0`: Step direction invert, mask
-- `$4=0`: Invert step enable pin, boolean
-- `$5=0`: Invert limit pins, boolean
-- `$6=0`: Invert probe pin, boolean
-- `$10=1`: Status report options, mask
-- `$11=0.010`: Junction deviation, millimeters
-- `$12=0.002`: Arc tolerance, millimeters
-- `$13=0`: Report in inches, boolean
-- `$20=0`: Soft limits, boolean
-- `$21=0`: Hard limits, boolean
-- `$22=1`: Homing cycle, boolean
+- `$0=10`: Step pulse time, microseconds 
+- `$1=25`: Step idle delay, milliseconds 
+- `$2=0`: Step pulse invert, mask 
+- `$3=0`: Step direction invert, mask 
+- `$4=0`: Invert step enable pin, boolean 
+- `$5=0`: Invert limit pins, boolean 
+- `$6=0`: Invert probe pin, boolean 
+- `$10=1`: Status report options, mask 
+- `$11=0.010`: Junction deviation, millimeters 
+- `$12=0.002`: Arc tolerance, millimeters 
+- `$13=0`: Report in inches, boolean 
+- `$20=0`: Soft limits, boolean 
+- `$21=0`: Hard limits, boolean 
+- `$22=1`: Homing cycle, boolean 
 - `$23=0`: Homing direction invert, mask
 - `$24=25.000`: Homing feed, mm/min
 - `$25=500.000`: Homing seek, mm/min
