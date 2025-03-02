@@ -86,7 +86,12 @@ export const setSpindleZDepth = async (req, res) => {
         return res.status(400).json({ error: 'Invalid spindle Z depth value' });
     }
 
+    if (!ESP32_BASE_URL) {
+        return res.status(400).json({ error: 'ESP32 not connected. Please set IP address first.' });
+    }
+
     try {
+        // Send the depth value to the ESP32
         const response = await axios.post(`${ESP32_BASE_URL}/api/spindle/depth`, { depth });
         res.json(response.data);
     } catch (error) {
