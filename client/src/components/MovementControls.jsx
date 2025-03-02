@@ -228,17 +228,21 @@ const handleSpindleSpeedCommit = async () => {
     
     loadingSetter(true);
     try {
-        // Calculate the depth value based on direction and step size
-        const depthChange = isUp ? selectedStep : -selectedStep;
+        const command = {
+            axis: 'z',
+            direction: direction.toLowerCase(),
+            speed: selectedSpeed,
+            step: selectedStep
+        };
         
-        logRequest(`Sending Z-axis command: ${direction} (Step: ${selectedStep}mm)`);
+        logRequest(`Sending Z-axis command: ${direction} (Speed: ${selectedSpeed}, Step: ${selectedStep})`);
         
-        const response = await fetch('http://localhost:3001/api/control/spindle/depth', {
+        const response = await fetch('http://localhost:3001/api/control', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ depth: depthChange })
+            body: JSON.stringify(command)
         });
 
         if (!response.ok) {
