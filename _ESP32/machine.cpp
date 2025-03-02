@@ -506,41 +506,40 @@ void handleGrblSetup(){
   }
   //Settings 2, 3, 4, 5, 6, 26, 32 are all non - use scenarios for the time being.
   else{
-    Serial.println("Keys are needed! Adding...");
-    myPrgVar.putFloat("$0", 1.0);
-    myPrgVar.putFloat("$1", 2.0);
-    myPrgVar.putFloat("$2", 3.0);
-    myPrgVar.putFloat("$3", 4.0);
-    myPrgVar.putFloat("$4", 5.0);
-    myPrgVar.putFloat("$5", 6.0);
-    myPrgVar.putFloat("$6", 7.0);
-    myPrgVar.putFloat("$10", 8.0);
-    myPrgVar.putFloat("$11", 9.0);
-    myPrgVar.putFloat("$12", 10.0);
-    myPrgVar.putFloat("$13", 11.0);
-    myPrgVar.putFloat("$20", 12.0);
-    myPrgVar.putFloat("$21", 13.0);
-    myPrgVar.putFloat("#22", 14.0);
-    myPrgVar.putFloat("$23", 15.0);
-    myPrgVar.putFloat("$24", 16.0);
-    myPrgVar.putFloat("$25", 17.0);
-    myPrgVar.putFloat("$26", 18.0);
-    myPrgVar.putFloat("$27", 19.0);
-    myPrgVar.putFloat("$30", 20.0);
-    myPrgVar.putFloat("$31", 21.0);
-    myPrgVar.putFloat("$32", 22.0);
-    myPrgVar.putFloat("$100", 23.0);
-    myPrgVar.putFloat("$101", 24.0);
-    myPrgVar.putFloat("$102", 25.0);
-    myPrgVar.putFloat("$110", 26.0);
-    myPrgVar.putFloat("$111", 27.0);
-    myPrgVar.putFloat("$112", 28.0);
-    myPrgVar.putFloat("$120", 29.0);
-    myPrgVar.putFloat("$121", 30.0);
-    myPrgVar.putFloat("$122", 31.0);
-    myPrgVar.putFloat("$130", 32.0);
-    myPrgVar.putFloat("$131", 33.0);
-    myPrgVar.putFloat("$132", 34.0);
+    myPrgVar.putInt("$0", 10); // Step pulse time, microseconds
+    myPrgVar.putInt("$1", 25); // Step idle delay, milliseconds
+    myPrgVar.putShort("$2", 0); // Step pulse invert, mask
+    myPrgVar.putShort("$3", 0); // Step direction invert, mask
+    myPrgVar.putBool("$4", 0); // Invert step enable pin, boolean
+    myPrgVar.putBool("$5", 0); // Invert limit pins, boolean
+    myPrgVar.putBool("$6", 0); // Invert probe pin, boolean
+    myPrgVar.putShort("$10", 1); // Status report options, mask
+    myPrgVar.putFloat("$11", 0.010); // Junction deviation, millimeters
+    myPrgVar.putFloat("$12", 0.002); // Arc tolerance, millimeters
+    myPrgVar.putBool("$13", false); // Report in inches, boolean
+    myPrgVar.putBool("$20", false); // Soft limits, boolean
+    myPrgVar.putBool("$21", false); // Hard limits, boolean
+    myPrgVar.putBool("$22", false); // Homing cycle, boolean
+    myPrgVar.putShort("$23", 0); // Homing direction invert, mask
+    myPrgVar.putFloat("$24", 25.000); // Homing feed, mm/min
+    myPrgVar.putFloat("$25", 500.000); // Homing seek, mm/min
+    myPrgVar.putInt("$26", 250); // Homing debounce, milliseconds
+    myPrgVar.putFloat("$27", 1.000); // Homing pull-off, millimeters
+    myPrgVar.putInt("$30", 10000); // Maximum spindle speed, RPM
+    myPrgVar.putInt("$31", 1000); // Minimum spindle speed, RPM
+    myPrgVar.putBool("$32", false); // Laser mode, boolean
+    myPrgVar.putFloat("$100", 250.000); // X-axis steps per millimeter
+    myPrgVar.putFloat("$101", 250.000); // Y-axis steps per millimeter
+    myPrgVar.putFloat("$102", 250.000); // Z-axis steps per millimeter
+    myPrgVar.putFloat("$110", 500.000); // X-axis maximum rate, mm/min
+    myPrgVar.putFloat("$111", 500.000); // Y-axis maximum rate, mm/min
+    myPrgVar.putFloat("$112", 500.000); // Z-axis maximum rate, mm/min
+    myPrgVar.putFloat("$120", 10.000); // X-axis acceleration, mm/sec^2
+    myPrgVar.putFloat("$121", 10.000); // Y-axis acceleration, mm/sec^2
+    myPrgVar.putFloat("$122", 10.000); // Z-axis acceleration, mm/sec^2
+    myPrgVar.putFloat("$130", 200.000); // X-axis maximum travel, millimeters
+    myPrgVar.putFloat("$131", 200.000); // Y-axis maximum travel, millimeters
+    myPrgVar.putFloat("$132", 200.000); // Z-axis maximum travel, millimeters
   }
   myPrgVar.end();
 }
