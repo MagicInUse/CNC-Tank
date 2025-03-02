@@ -329,7 +329,7 @@ const ConfigMenu = () => {
         if (!grblSettings) return null;
 
         return (
-            <div className="mt-4 max-h-96 overflow-y-auto">
+            <div className="mt-4 max-h-[250px] overflow-y-auto">
                 <h4 className="text-md font-semibold mb-2">GRBL Settings</h4>
                 <div className="space-y-1">
                     {Object.entries(grblSettings).map(([key, setting]) => (
@@ -387,8 +387,8 @@ const ConfigMenu = () => {
     return (
         <>
             {showConfig ? (
-                <div className="absolute top-10 right-10 p-4 border border-gray-400 rounded-lg shadow-lg z-50 min-w-[400px] max-w-[600px] max-h-[80vh] overflow-hidden">
-                    <div className="absolute top-2 -right-5 w-64 h-64 opacity-10 pointer-events-none">
+                <div className="absolute top-10 right-10 p-4 config border border-gray-400 rounded-lg shadow-lg z-50 min-w-[420px] max-w-[600px] max-h-[500px] overflow-hidden">
+                    <div className="absolute top-1 -right-5 w-60 h-60 opacity-25 pointer-events-none">
                         <img src={logo} alt="MagicApps Logo" className="object-contain w-full h-full" />
                     </div>
                     <h3 className="text-lg font-semibold mb-2">Configuration</h3>

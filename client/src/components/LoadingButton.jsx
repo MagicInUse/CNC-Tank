@@ -15,9 +15,7 @@ const LoadingButton = ({
       disabled={isLoading || disabled}
       className={`relative ${className}`}
     >
-      <div className={''}>
-        {children}
-      </div>
+      {children}
       {isLoading && (
         <div 
           className={`absolute inset-0 flex items-center backdrop-blur-sm
