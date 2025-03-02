@@ -46,6 +46,10 @@
     cursor: not-allowed !important;
   }
 
+  .config {    
+    background-color: #1a1a1a !important;
+  }
+
   .console {
     width: 420px;
   }

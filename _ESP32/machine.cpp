@@ -596,40 +596,40 @@ void handleGrblUpdate() {
         return;
     }
 
-    if (!doc.containsKey("key") || !doc.containsKey("value")) {
+    if (!doc.containsKey("key") || !doc.containsKey("value") || !doc.containsKey("type")) {
         server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
         return;
     }
 
     const char* key = doc["key"];
-    float value = doc["value"];
+    const char* type = doc["type"];
 
     myPrgVar.begin("GBRL", false);
     
-    // Store value based on the setting type
-    if (String(key) == "$0" || String(key) == "$1" || String(key) == "$26" || 
-        String(key) == "$30" || String(key) == "$31") {
-        myPrgVar.putInt(key, (int)value);
-    } else if (String(key) == "$2" || String(key) == "$3" || String(key) == "$10" || 
-               String(key) == "$23") {
-        myPrgVar.putShort(key, (short)value);
-    } else if (String(key) == "$4" || String(key) == "$5" || String(key) == "$6" || 
-               String(key) == "$13" || String(key) == "$20" || String(key) == "$21" || 
-               String(key) == "$22" || String(key) == "$32") {
-        myPrgVar.putBool(key, (bool)value);
-    } else {
-        myPrgVar.putFloat(key, value);
+    bool success = false;
+    if (strcmp(type, "int") == 0) {
+        success = myPrgVar.putInt(key, doc["value"].as<int>());
+    } else if (strcmp(type, "short") == 0) {
+        success = myPrgVar.putShort(key, doc["value"].as<short>());
+    } else if (strcmp(type, "bool") == 0) {
+        success = myPrgVar.putBool(key, doc["value"].as<bool>());
+    } else if (strcmp(type, "float") == 0) {
+        success = myPrgVar.putFloat(key, doc["value"].as<float>());
     }
     
     myPrgVar.end();
     
-    StaticJsonDocument<200> response;
-    response["status"] = "success";
-    response[key] = value;
-    
-    String responseStr;
-    serializeJson(response, responseStr);
-    server.send(200, "application/json", responseStr);
+    if (success) {
+        StaticJsonDocument<200> response;
+        response["status"] = "success";
+        response[key] = doc["value"];
+        
+        String responseStr;
+        serializeJson(response, responseStr);
+        server.send(200, "application/json", responseStr);
+    } else {
+        server.send(500, "application/json", "{\"error\": \"Failed to update setting\"}");
+    }
 }
 
 /*

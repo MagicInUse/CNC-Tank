@@ -54,6 +54,17 @@ const getGrblSettingUnit = (description) => {
     return null;
 };
 
+const getGrblSettingType = (key) => {
+    const intSettings = ['$0', '$1', '$26', '$30', '$31'];
+    const shortSettings = ['$2', '$3', '$10', '$23'];
+    const boolSettings = ['$4', '$5', '$6', '$13', '$20', '$21', '$22', '$32'];
+    
+    if (intSettings.includes(key)) return 'int';
+    if (shortSettings.includes(key)) return 'short';
+    if (boolSettings.includes(key)) return 'bool';
+    return 'float';
+};
+
 export const getGrblConfig = async (req, res) => {
     try {
         const response = await axios.get(`${ESP32_BASE_URL}/api/config/grbl`, {
@@ -63,10 +74,16 @@ export const getGrblConfig = async (req, res) => {
         const enhancedData = {};
         Object.entries(response.data).forEach(([key, value]) => {
             const description = GRBL_DESCRIPTIONS[key];
+            const type = getGrblSettingType(key);
+            
+            // Convert boolean responses from ESP32 to number (0/1)
+            const processedValue = type === 'bool' ? Number(value) : value;
+            
             enhancedData[key] = {
-                value,
+                value: processedValue,
                 description,
-                unit: getGrblSettingUnit(description)
+                unit: getGrblSettingUnit(description),
+                type
             }
         });
 
@@ -88,12 +105,43 @@ export const updateGrblConfig = async (req, res) => {
         return res.status(400).json({ error: 'Key and value are required' });
     }
 
+    // Validate and convert the value based on setting type
+    const settingType = getGrblSettingType(key);
+    let processedValue;
+
+    try {
+        switch (settingType) {
+            case 'int':
+                processedValue = parseInt(value);
+                break;
+            case 'short':
+                processedValue = parseInt(value);
+                if (processedValue < -32768 || processedValue > 32767) {
+                    throw new Error('Value out of range for short');
+                }
+                break;
+            case 'bool':
+                processedValue = Boolean(value);
+                break;
+            case 'float':
+                processedValue = parseFloat(value);
+                break;
+        }
+
+        if (isNaN(processedValue) && settingType !== 'bool') {
+            throw new Error('Invalid numeric value');
+        }
+    } catch (error) {
+        return res.status(400).json({ 
+            error: `Invalid value for setting type ${settingType}: ${error.message}` 
+        });
+    }
+
     try {
         const response = await axios.post(`${ESP32_BASE_URL}/api/config/grbl`, {
             key,
-            value
-        }, {
-            timeout: 3000
+            value: processedValue,
+            type: settingType
         });
         
         res.json(response.data);
