@@ -326,18 +326,21 @@ void handleSpindleZDepth() {
         return;
     }
 
-    // Validate all required parameters
-    if (!doc.containsKey("step") || 
-        !doc.containsKey("direction") || 
-        !doc.containsKey("speed")) {
+    if (!doc["command"].containsKey("direction") ||
+        !doc["command"].containsKey("speed") ||
+        !doc["command"].containsKey("step")) {
         server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
         return;
     }
 
-    //replace depth with step TODO
-    int step = doc["step"].as<int>();
-    String direction = doc["direction"].as<String>();
-    int speed = doc["speed"].as<int>();
+    String direction = doc["command"]["direction"];
+    int speed = doc["command"]["speed"];
+    int step = doc["command"]["step"];
+
+    Serial.println("Received Z-axis command:");
+    Serial.println("Direction: " + direction);
+    Serial.println("Speed: " + String(speed));
+    Serial.println("Step: " + String(step));
 
     // Validate speed range (assuming steps per second)
     if (speed < 100 || speed > 5000) {
@@ -355,23 +358,16 @@ void handleSpindleZDepth() {
     // Move the specified number of steps
     zStepper->move(step);
 
-    // Send response
-    StaticJsonDocument<200> response;
-    response["status"] = "success";
-    response["movement"] = {
-        {"step", step},
-        {"direction", direction},
-        {"speed", speed}
-    };
-
-    String responseStr;
-    serializeJson(response, responseStr);
-    
-    // Send success message to console
     sendConsoleMessage("info", "Z-axis movement: Direction=" + direction + 
                               ", Step=" + String(step) + 
                               ", Speed=" + String(speed));
-                              
+
+    StaticJsonDocument<200> response;
+    response["status"] = "success";
+    response["command"] = doc["command"];
+    
+    String responseStr;
+    serializeJson(response, responseStr);
     server.send(200, "application/json", responseStr);
 }
 
@@ -498,14 +494,14 @@ void handleApiUpdatePost() {
 //TO-DO Select correct types for the keys. Not all keys are floats. Make sure to assign "N" for Null to unused settings.
 //Create a namespace for GRBL. Or check for its existance.
 void handleGrblSetup(){
-   myPrgVar.begin("GBRL", false);
-//   bool keyPresent = myPrgVar.isKey("$0");
-//   if(keyPresent){
-//       Serial.println("Keys are already present!");
-//       return;
-//   }
-//   //Settings 2, 3, 4, 5, 6, 26, 32 are all non - use scenarios for the time being.
-//   else{
+  myPrgVar.begin("GBRL", false);
+  bool keyPresent = myPrgVar.isKey("$0");
+  if(keyPresent){
+      Serial.println("Keys are already present!");
+      return;
+  }
+  //Settings 2, 3, 4, 5, 6, 26, 32 are all non - use scenarios for the time being.
+  else {
     myPrgVar.putInt("$0", 10); // Step pulse time, microseconds
     myPrgVar.putInt("$1", 25); // Step idle delay, milliseconds
     myPrgVar.putShort("$2", 0); // Step pulse invert, mask
