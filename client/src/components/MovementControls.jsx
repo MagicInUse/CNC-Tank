@@ -15,7 +15,7 @@ const MovementControls = () => {
   const [showStepMenu, setShowStepMenu] = useState(false);
   const [laserOn, setLaserOn] = useState(false);
   const [spindleOn, setSpindleOn] = useState(false);
-  const [spindleSpeed, setSpindleSpeed] = useState(100);
+  const [spindleSpeed, setSpindleSpeed] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [thumbPosition, setThumbPosition] = useState(0);
   const [isSpindleLoading, setIsSpindleLoading] = useState(false);
@@ -161,7 +161,7 @@ const toggleLaser = async () => {
     }
 };
 
-const handleSpindleSpeed = async (event) => {
+const handleSpindleSpeedChange = async (event) => {
     const speed = parseInt(event.target.value);
     setSpindleSpeed(speed);
 
@@ -183,12 +183,6 @@ const handleSpindleSpeed = async (event) => {
     })
     .catch(error => logError(`Error: ${error.message}`));
 };
-
-  // Track speed changes without sending updates
-  const handleSpindleSpeedChange = (event) => {
-    const speed = parseInt(event.target.value);
-    setSpindleSpeed(speed);
-  };
 
   // Send update when slider movement ends
   const handleSpindleSpeedCommit = () => {
