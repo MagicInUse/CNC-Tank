@@ -498,14 +498,14 @@ void handleApiUpdatePost() {
 //TO-DO Select correct types for the keys. Not all keys are floats. Make sure to assign "N" for Null to unused settings.
 //Create a namespace for GRBL. Or check for its existance.
 void handleGrblSetup(){
-  myPrgVar.begin("GBRL", false);
-  bool keyPresent = myPrgVar.isKey("$0");
-  if(keyPresent){
-      Serial.println("Keys are already present!");
-      return;
-  }
-  //Settings 2, 3, 4, 5, 6, 26, 32 are all non - use scenarios for the time being.
-  else{
+   myPrgVar.begin("GBRL", false);
+//   bool keyPresent = myPrgVar.isKey("$0");
+//   if(keyPresent){
+//       Serial.println("Keys are already present!");
+//       return;
+//   }
+//   //Settings 2, 3, 4, 5, 6, 26, 32 are all non - use scenarios for the time being.
+//   else{
     myPrgVar.putInt("$0", 10); // Step pulse time, microseconds
     myPrgVar.putInt("$1", 25); // Step idle delay, milliseconds
     myPrgVar.putShort("$2", 0); // Step pulse invert, mask
@@ -540,8 +540,8 @@ void handleGrblSetup(){
     myPrgVar.putFloat("$130", 200.000); // X-axis maximum travel, millimeters
     myPrgVar.putFloat("$131", 200.000); // Y-axis maximum travel, millimeters
     myPrgVar.putFloat("$132", 200.000); // Z-axis maximum travel, millimeters
-  }
-  myPrgVar.end();
+//   }
+   myPrgVar.end();
 }
 
 //TO-DO expand this function to be able to respond to a server. On inital connect.
