@@ -657,6 +657,7 @@ void handleGrblUpdate() {
 
 //Function needs to accept the axis of movement, the direction of movement, the step count, and the speed in Us.
 bool stepperQueueUp(){
+    
     return true;
 }
 
