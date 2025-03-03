@@ -632,33 +632,38 @@ void handleGrblUpdate() {
     }
 }
 
-/*
-    FastAccelStepper does in fact move asynchronously. However, any attempt to update the position that it is moving to prior to the previous command being completed will result in the stepper
-    stopping and ignoring previous commands.
+//Function needs to accept the axis of movement indicated by > 0, and the speed in Us for that axis...
+//Might require a period master argument as well to determine blocking based off of period instead of distance. 
+bool stepperController(int leftSteps, int rightSteps, int zSteps, int leftPeriod, int rightPeriod, int zPeriod){
+    //Configure speeds for the steppers.
+    zStepper->setSpeedInUs(zPeriod);
+    leftStepper->setSpeedInUs(leftPeriod);
+    rightStepper->setSpeedInUs(rightPeriod);
+    //Acclerations should be constant...
+    //Check for the maximum number of steps to be the blocking variable. Left and Right should move together. In case left has the most steps:
+    if(abs(leftSteps) > abs(rightSteps) && abs(leftSteps) > abs(zSteps)){
+      zStepper->move(zSteps);
+      rightStepper->move(rightSteps);
+      leftStepper->move(leftSteps, true);
+    //In case right has most number of steps
+    }else if(abs(rightSteps) > abs(leftSteps) && abs(rightSteps) > abs(zSteps)){
+      zStepper->move(zSteps);
+      leftStepper->move(leftSteps);
+      rightStepper->move(rightSteps, true);
+    //In case of Z requiring the most steps:
+    }else if(abs(zSteps) > abs(leftSteps) && abs(zSteps) > abs(rightSteps)){
+      rightStepper->move(rightSteps);
+      leftStepper->move(leftSteps);
+      zStepper->move(zSteps, true);
+    //Off chance that all three steppers have equal steps to perform. Default to Z being blocking.
+    }else{
+      rightStepper->move(rightSteps);
+      leftStepper->move(leftSteps);
+      zStepper->move(zSteps, true);
+    }
 
-    I.E
-    zStepper->move(1000);
-    zStepper->move(2000);
+    return true; //Indicates that all blocking functions have completed.
 
-    rightStepper->move(1000);
-    rightStepper->move(2000);
-
-    ...will result in the stepper(s) doing nothing.
-
-    I.E
-    zStepper->move(1000);
-    zStepper->move(1000);
-    ...completeCheck...
-    rightStepper->move(500);
-    rightStepper->move(500);
-
-    ...will result in the expected forward movement of all the steppers. Followed by the reverse movement of the steppers.
-*/
-
-//Function needs to accept the axis of movement, the direction of movement, the step count, and the speed in Us.
-bool stepperQueueUp(){
-    
-    return true;
 }
 
 // Main Setup
@@ -775,7 +780,6 @@ void setup() {
     // OTA Tunnel endpoints - via React frontend
     server.on("/api/update", HTTP_GET, handleApiUpdateGet);
     server.on("/api/update", HTTP_POST, handleApiUpdatePost, handleTunnelUpdate);
-
     
     server.begin();
     MDNS.addService("http", "tcp", 80);
@@ -786,5 +790,8 @@ void setup() {
 
 // Main Loop
 void loop() {
+    //TO-DO:
+    //Server handleClient needs to be in the stepperController as well so it can handle incoming requests despite the
+    //controller being pseduo blocking.
     server.handleClient();
 }
