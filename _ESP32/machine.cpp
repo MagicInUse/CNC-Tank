@@ -52,6 +52,9 @@
 //Accesories (I2C or other Options)
 #define laser 4
 
+//Homing specific params
+volatile bool homeStop = false;
+
 //AccelStepper setup
 FastAccelStepperEngine engine = FastAccelStepperEngine();
 FastAccelStepper *zStepper = NULL;
@@ -63,6 +66,13 @@ WebServer server(80);
 
 //Preferences Object.
 Preferences myPrgVar;
+
+//ISRs for hardware interrupt(Z probing and Z homing)
+void IRAM_ATTR homingStop(){
+  homeStop = true;
+  //Allow the processor to think without ISR being hammered.
+  detachInterrupt(zEndStop);
+}
 
 //Replace with credential bound keys.
 String ssid;
@@ -631,6 +641,42 @@ void handleGrblUpdate() {
         server.send(500, "application/json", "{\"error\": \"Failed to update setting\"}");
     }
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void handleHoming() {
+    if (server.hasArg("plain") == false) {
+        server.send(400, "application/json", "{\"error\": \"No data received\"}");
+        return;
+    }
+
+    String body = server.arg("plain");
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
+        return;
+    }
+
+    //Notify client that homing has started.
+    sendConsoleMessage("info", "Homing...");
+
+    //Run zHoming and listen for a false return. If a false return send throw an error to the client
+    if(!zHoming){
+      server.send(500, "application/json", "{\"error\": \"Failed to home. Check hardware.\"}");
+      return;
+    }
+
+    //If zHoming is succesfull notify client
+    sendConsoleMessage("success", "Homed.");
+
+    StaticJsonDocument<200> response;
+    response["status"] = "success";
+    response["command"] = "Z is homed.";
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
+}
 
 //Function needs to accept the axis of movement indicated by > 0, and the speed in Us for that axis...
 //Might require a period master argument as well to determine blocking based off of period instead of distance. 
@@ -664,6 +710,51 @@ bool stepperController(int leftSteps, int rightSteps, int zSteps, int leftPeriod
 
     return true; //Indicates that all blocking functions have completed.
 
+}
+
+
+bool zHoming(){
+  //Capture the required parameters from the namespace, "GRBL"
+  myPrgVar.begin("GBRL", true);
+  //Four parameters - Zsteps/mm, Homing speed in US, zAccleration, Homing Pull Off
+  float zHomingSpeed = myPrgVar.getFloat("$24", 0.0);
+  float zStepsPerMM = myPrgVar.getFloat("$102", 0.0);
+  float zStepOff = myPrgVar.getFloat("$27", 0.0);
+  float zAccel = myPrgVar.getFloat("$33", 0.0);
+  myPrgVar.end();
+  //Check for any zero values implying that something is incorrect with GRBL
+  if(zHomingSpeed == 0.0, zStepsPerMM == 0.0, zStepOff == 0.0, zAccel == 0.0){
+    Serial.println("Some GRBL setting returned with a Zero value");
+    return false;
+  }else{
+    //Calculate steps needed per second: steps/mm * mm/min = steps required per minute / 60 seconds/min = steps per second (Hz)
+    zHomingSpeed = (zStepsPerMM * zHomingSpeed) / 60;
+    //Calculate steps needed to meet the pull-off distance: steps required = zStepOff * zStepsPerMM
+    zStepOff = zStepsPerMM * zStepOff;
+  }
+  //Set speed variables.
+  zStepper->setSpeedInHz(round(zHomingSpeed));
+  zStepper->setAcceleration(zAccel);
+  //Remove any interrupts attached to zEndStop
+  detachInterrupt(zEndStop);
+  //Replace with desired ISR and ONLOW mode.
+  attachInterrupt(zEndStop, homingStop, ONLOW);
+  //Run backwards until limit is triggered
+  zStepper->runBackward();
+  while(!homeStop);
+  //Finish stepping.
+  zStepper->forceStop();
+  //Step off the endstop until trigger goes high
+  while(digitalRead(zEndStop) == 0){
+    zStepper->forwardStep(true);
+  }
+  //Finish stepping
+  zStepper->forceStop();
+  //Make homing pull off blocking so function does not advance.
+  zStepper->move(zStepOff, true);
+  //TO-DO: Attach danger interrupt if required
+  //Allow outside functions to know safety is complete.
+  return true;
 }
 
 // Main Setup
@@ -772,6 +863,7 @@ void setup() {
     server.on("/api/spindle", HTTP_POST, handleSpindle);
     server.on("/api/spindle/speed", HTTP_POST, handleSpindleSpeed);
     server.on("/api/spindle/depth", HTTP_POST, handleSpindleZDepth);
+    server.on("/api/control/zhome", HTTP_POST, handleHoming);
     
     // OTA Update endpoints
     server.on("/update", HTTP_GET, handleUpdate);
@@ -790,8 +882,5 @@ void setup() {
 
 // Main Loop
 void loop() {
-    //TO-DO:
-    //Server handleClient needs to be in the stepperController as well so it can handle incoming requests despite the
-    //controller being pseduo blocking.
     server.handleClient();
 }
