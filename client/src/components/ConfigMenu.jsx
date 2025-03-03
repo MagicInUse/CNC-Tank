@@ -304,7 +304,7 @@ const ConfigMenu = () => {
                                 onClick={() => setting.type !== 'bool' && handleSettingClick(key, setting)}
                                 loadingClassName="bg-gray-800/50"
                             >
-                                <div className="flex items-center justify-between w-full gap-4">
+                                <div className="flex items-center justify-between w-full gap-4 mr-2">
                                     <div className="flex items-center gap-4 min-w-0">
                                         <span className="font-mono w-12 flex-shrink-0">{key}</span>
                                         <span className="text-left text-xs text-gray-400 truncate">{setting.description}</span>

@@ -107,9 +107,15 @@ export const homeZAxis = async (req, res) => {
 
     try {
         const response = await axios.post(`${ESP32_BASE_URL}/api/control/zhome`);
+        
+        if (response.data.error) {
+            return res.status(500).json({ error: response.data.error });
+        }
+
+        // Forward success response from ESP32
         res.json(response.data);
     } catch (error) {
-        const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
+        const errorMessage = error.response?.data?.error || 'Error during Z-axis homing';
         res.status(500).json({ error: errorMessage });
     }
 };

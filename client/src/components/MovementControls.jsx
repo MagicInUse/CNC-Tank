@@ -276,7 +276,7 @@ const handleSpindleSpeedCommit = async () => {
   const handleZHome = async () => {
     setIsZHomingLoading(true);
     try {
-        logRequest('Sending Z-axis home command...');
+        logRequest('Initiating Z-axis homing sequence...');
         const response = await fetch('http://localhost:3001/api/control/zhome', {
             method: 'POST',
             headers: {
@@ -284,23 +284,26 @@ const handleSpindleSpeedCommit = async () => {
             }
         });
 
+        const data = await response.json();
+        
         if (!response.ok) {
-            const errorData = await response.json();
-            logError(`Failed to home Z-axis: ${errorData.message || 'Unknown error'}`);
+            logError(`Z-homing failed: ${data.error || 'Unknown error'}`);
+            // Reset Z state on failure
+            updateZStatus('!home');
             return;
         }
 
-        const data = await response.json();
         updateZStatus('home');
         logResponse('Z-axis homing completed successfully');
     } catch (error) {
-        logError(`Error homing Z-axis: ${error.message}`);
+        logError(`Error during Z-homing: ${error.message}`);
+        updateZStatus('!home');
     } finally {
         setIsZHomingLoading(false);
     }
-  };
+};
 
-  // Update the handleMovementHomeComplete function
+// Update the handleMovementHomeComplete function
   const handleMovementHomeComplete = () => {
     setTimeout(() => {
       // TODO: Add if statement to check if still connected to machine then idle, else ''
