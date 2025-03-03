@@ -99,3 +99,17 @@ export const setSpindleZDepth = async (req, res) => {
         res.status(500).json({ error: errorMessage });
     }
 };
+
+export const homeZAxis = async (req, res) => {
+    if (!ESP32_BASE_URL) {
+        return res.status(400).json({ error: 'ESP32 not connected. Please set IP address first.' });
+    }
+
+    try {
+        const response = await axios.post(`${ESP32_BASE_URL}/api/control/zhome`);
+        res.json(response.data);
+    } catch (error) {
+        const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
+        res.status(500).json({ error: errorMessage });
+    }
+};
