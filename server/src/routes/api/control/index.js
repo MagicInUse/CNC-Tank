@@ -9,6 +9,6 @@ controlRouter.post('/laser', toggleLaser);
 controlRouter.post('/spindle', toggleSpindle);
 controlRouter.post('/spindle/speed', setSpindleSpeed);
 controlRouter.post('/spindle/depth', setSpindleZDepth);
-controlRouter.post('/zhome', homeZAxis); // New endpoint for Z-axis homing
+controlRouter.post('/zhome', homeZAxis);
 
 export default controlRouter;

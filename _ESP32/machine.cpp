@@ -643,39 +643,38 @@ void handleGrblUpdate() {
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void handleHoming() {
-    if (server.hasArg("plain") == false) {
-        server.send(400, "application/json", "{\"error\": \"No data received\"}");
-        return;
-    }
-
-    String body = server.arg("plain");
-    StaticJsonDocument<200> doc;
-    DeserializationError error = deserializeJson(doc, body);
-
-    if (error) {
-        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
-        return;
-    }
-
-    //Notify client that homing has started.
-    sendConsoleMessage("info", "Homing...");
-
-    //Run zHoming and listen for a false return. If a false return send throw an error to the client
-    if(!zHoming){
-      server.send(500, "application/json", "{\"error\": \"Failed to home. Check hardware.\"}");
-      return;
-    }
-
-    //If zHoming is succesfull notify client
-    sendConsoleMessage("success", "Homed.");
-
     StaticJsonDocument<200> response;
+
+    // Send initial status
+    sendConsoleMessage("info", "Starting Z-axis homing sequence...");
+
+    if (!zStepper) {
+        response["error"] = "Z-axis stepper not initialized";
+        String responseStr;
+        serializeJson(response, responseStr);
+        server.send(500, "application/json", responseStr);
+        return;
+    }
+
+    // Run zHoming and check for failures
+    if (!zHoming()) {
+        response["error"] = "Z-axis homing failed. Check hardware and settings.";
+        String responseStr;
+        serializeJson(response, responseStr);
+        server.send(500, "application/json", responseStr);
+        return;
+    }
+
+    // Success response
     response["status"] = "success";
-    response["command"] = "Z is homed.";
+    response["message"] = "Z-axis homing completed successfully";
     
     String responseStr;
     serializeJson(response, responseStr);
     server.send(200, "application/json", responseStr);
+    
+    // Notify client of success
+    sendConsoleMessage("success", "Z-axis homing completed");
 }
 
 //Function needs to accept the axis of movement indicated by > 0, and the speed in Us for that axis...
