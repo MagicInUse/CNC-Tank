@@ -24,6 +24,7 @@ const MovementControls = () => {
   const [isZUpLoading, setIsZUpLoading] = useState(false);
   const [isZDownLoading, setIsZDownLoading] = useState(false);
   const [isSpindleSpeedLoading, setIsSpindleSpeedLoading] = useState(false);
+  const [isZHomingLoading, setIsZHomingLoading] = useState(false);
   const spindleSpeedTimeout = useRef(null);
   
   const speedMenuRef = useRef(null);
@@ -272,6 +273,33 @@ const handleSpindleSpeedCommit = async () => {
     }
 };
 
+  const handleZHome = async () => {
+    setIsZHomingLoading(true);
+    try {
+        logRequest('Sending Z-axis home command...');
+        const response = await fetch('http://localhost:3001/api/control/zhome', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            logError(`Failed to home Z-axis: ${errorData.message || 'Unknown error'}`);
+            return;
+        }
+
+        const data = await response.json();
+        updateZStatus('home');
+        logResponse('Z-axis homing completed successfully');
+    } catch (error) {
+        logError(`Error homing Z-axis: ${error.message}`);
+    } finally {
+        setIsZHomingLoading(false);
+    }
+  };
+
   // Update the handleMovementHomeComplete function
   const handleMovementHomeComplete = () => {
     setTimeout(() => {
@@ -440,9 +468,13 @@ const handleSpindleSpeedCommit = async () => {
             <ArrowUpSVG className="w-6 h-12" />
           </div>
         </LoadingButton>
-        <button type="button" className="w-12 h-12 mt-1 p-2 rounded-lg flex items-center justify-center">
+        <LoadingButton
+          onClick={handleZHome}
+          isLoading={isZHomingLoading}
+          className="w-12 h-12 mt-1 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
+        >
           {getZCenterButtonSVG()}
-        </button>
+        </LoadingButton>
         <LoadingButton 
           onClick={() => handleZCommand('down')}
           isLoading={isZDownLoading}
