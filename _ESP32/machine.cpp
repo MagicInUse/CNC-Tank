@@ -348,23 +348,7 @@ void handleSpindleZDepth() {
     int speed = doc["command"]["speed"];
     int step = doc["command"]["step"];
 
-    // Make sure stepper is stopped before new command
-    zStepper->stopMove();
-
-    // Set movement parameters
-    zStepper->setAcceleration(1000);  // Set reasonable acceleration
-    zStepper->setSpeedInHz(speed);    // Set target speed
-
-    // Calculate actual steps based on direction
-    long actualSteps = (direction == "up") ? step : -step;
-
-    // Move the specified number of steps
-    zStepper->move(actualSteps);
-
-    // Wait for motion to complete (optional - be careful with blocking operations)
-    // while (zStepper->isRunning()) {
-    //     delay(10);
-    // }
+    //To-DO Use new stepper control function to accept commands from console.
 
     sendConsoleMessage("info", "Z-axis movement: Direction=" + direction + 
                               ", Step=" + String(step) + 
@@ -641,20 +625,12 @@ void handleGrblUpdate() {
         server.send(500, "application/json", "{\"error\": \"Failed to update setting\"}");
     }
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void handleHoming() {
     StaticJsonDocument<200> response;
 
     // Send initial status
     sendConsoleMessage("info", "Starting Z-axis homing sequence...");
-
-    if (!zStepper) {
-        response["error"] = "Z-axis stepper not initialized";
-        String responseStr;
-        serializeJson(response, responseStr);
-        server.send(500, "application/json", responseStr);
-        return;
-    }
 
     // Run zHoming and check for failures
     if (!zHoming()) {
@@ -716,14 +692,13 @@ bool zHoming(){
   //Capture the required parameters from the namespace, "GRBL"
   myPrgVar.begin("GBRL", true);
   //Four parameters - Zsteps/mm, Homing speed in US, zAccleration, Homing Pull Off
-  float zHomingSpeed = myPrgVar.getFloat("$24", 0.0);
-  float zStepsPerMM = myPrgVar.getFloat("$102", 0.0);
-  float zStepOff = myPrgVar.getFloat("$27", 0.0);
-  float zAccel = myPrgVar.getFloat("$33", 0.0);
+  float zHomingSpeed = myPrgVar.getFloat("$24");
+  float zStepsPerMM = myPrgVar.getFloat("$102");
+  float zStepOff = myPrgVar.getFloat("$27");
+  float zAccel = myPrgVar.getFloat("$122");
   myPrgVar.end();
   //Check for any zero values implying that something is incorrect with GRBL
   if(zHomingSpeed == 0.0, zStepsPerMM == 0.0, zStepOff == 0.0, zAccel == 0.0){
-    Serial.println("Some GRBL setting returned with a Zero value");
     return false;
   }else{
     //Calculate steps needed per second: steps/mm * mm/min = steps required per minute / 60 seconds/min = steps per second (Hz)
@@ -734,8 +709,7 @@ bool zHoming(){
   //Set speed variables.
   zStepper->setSpeedInHz(round(zHomingSpeed));
   zStepper->setAcceleration(zAccel);
-  //Remove any interrupts attached to zEndStop
-  detachInterrupt(zEndStop);
+`
   //Replace with desired ISR and ONLOW mode.
   attachInterrupt(zEndStop, homingStop, ONLOW);
   //Run backwards until limit is triggered
@@ -743,16 +717,21 @@ bool zHoming(){
   while(!homeStop);
   //Finish stepping.
   zStepper->forceStop();
+  digitalWrite(zStepperEnb, LOW);
+  Serial.println("ISR Fired");
   //Step off the endstop until trigger goes high
   while(digitalRead(zEndStop) == 0){
     zStepper->forwardStep(true);
   }
   //Finish stepping
+  digitalWrite(zStepperEnb, LOW);
   zStepper->forceStop();
   //Make homing pull off blocking so function does not advance.
   zStepper->move(zStepOff, true);
+  zStepper->setCurrentPosition(0);
   //TO-DO: Attach danger interrupt if required
   //Allow outside functions to know safety is complete.
+  homeStop = false;
   return true;
 }
 
@@ -877,6 +856,7 @@ void setup() {
     
     Serial.println("Server started on host: " + WiFi.localIP().toString());
     Serial.printf("OTA Updates available at http://%s.local/update\n", host);
+
 }
 
 // Main Loop
