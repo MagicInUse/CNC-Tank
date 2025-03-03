@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StopSVG, HomingSVG, HomedSVG, ArrowUpSVG, WifiSVG, NoWifiSVG, SpindleSVG } from '../assets/SVGs';
+import { StopSVG, HomingSVG, HomedSVG, ArrowUpSVG, WifiSVG, NoWifiSVG, SpindleSVG, CurvedArrowSVG } from '../assets/SVGs';
 import { useConsoleLog } from '../utils/ConsoleLog';
 import { useMachine } from '../context/MachineContext';
 import LoadingButton from './LoadingButton';
@@ -456,13 +456,13 @@ const handleSpindleSpeedCommit = async () => {
       {/* Directional Control */}
       <div className="grid grid-cols-3 gap-2 w-40">
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
-          <ArrowUpSVG className="w-full h-full -rotate-45" />
+          <CurvedArrowSVG className="w-full h-full" />
         </button>
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
           <ArrowUpSVG className="w-full h-full" />
         </button>
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
-          <ArrowUpSVG className="w-full h-full rotate-45" />
+          <CurvedArrowSVG className="w-full h-full -scale-x-100" />
         </button>
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
           <ArrowUpSVG className="w-full h-full -rotate-90" />
@@ -474,13 +474,13 @@ const handleSpindleSpeedCommit = async () => {
           <ArrowUpSVG className="w-full h-full rotate-90" />
         </button>
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
-          <ArrowUpSVG className="w-full h-full rotate-[225deg]" />
+          <CurvedArrowSVG className="w-full h-full -scale-y-100" />
         </button>
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
           <ArrowUpSVG className="w-full h-full rotate-180" />
         </button>
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
-          <ArrowUpSVG className="w-full h-full rotate-[135deg]" />
+          <CurvedArrowSVG className="w-full h-full -scale-x-100 -scale-y-100" />
         </button>
       </div>
     </div>

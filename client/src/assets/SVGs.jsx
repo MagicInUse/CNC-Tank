@@ -111,7 +111,6 @@ export function StopSVG(props) {
   )
 }
 
-
 export function ArrowUpSVG(props) {
   return (
     <svg
@@ -128,6 +127,29 @@ export function ArrowUpSVG(props) {
     </svg>
   )
 }
+
+export function CurvedArrowSVG(props) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width="1em"
+      height="1em"
+      {...props}
+    >
+      <g
+        fill="currentColor"
+        fillRule="evenodd"
+        strokeWidth="1.5"
+        clipRule="evenodd"
+      >
+        <path d="M6.22 8.78a.75.75 0 0 1 0-1.06l3.5-3.5a.75.75 0 0 1 1.28.53v7a.75.75 0 0 1-1.28.53z"></path>
+        <path d="M9 8.25a.75.75 0 0 1 .75-.75h3a4.75 4.75 0 0 1 4.75 4.75v7a.75.75 0 0 1-1.5 0v-7A3.25 3.25 0 0 0 12.75 9h-3A.75.75 0 0 1 9 8.25"></path>
+      </g>
+    </svg>
+  )
+}
+
 
 export function NoWifiSVG(props) {
   return (
