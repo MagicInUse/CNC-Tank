@@ -863,7 +863,7 @@ void setup() {
     server.on("/api/spindle", HTTP_POST, handleSpindle);
     server.on("/api/spindle/speed", HTTP_POST, handleSpindleSpeed);
     server.on("/api/spindle/depth", HTTP_POST, handleSpindleZDepth);
-    server.on("/api/control/zHome", HTTP_POST, handleHoming);
+    server.on("/api/control/zhome", HTTP_POST, handleHoming);
     
     // OTA Update endpoints
     server.on("/update", HTTP_GET, handleUpdate);
