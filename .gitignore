@@ -133,4 +133,4 @@ dist
 .vscode/
 
 # custom progress images folder
-.progress/
+# .progress/
