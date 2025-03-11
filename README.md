@@ -1,6 +1,9 @@
-# CNC-Tank# CNC-Tank
+# CNC-Tank
 
 CNC-Tank is a comprehensive full-stack application designed to control and monitor CNC machines. This project leverages modern web technologies and microcontroller programming to provide a seamless and interactive user experience for CNC machine operations.
+
+## Most Recent Screenshot
+![Most Recent Screenshot](.progress/draft6.png)
 
 ## Features
 
