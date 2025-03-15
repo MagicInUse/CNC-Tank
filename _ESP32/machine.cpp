@@ -696,6 +696,7 @@ bool zHoming(){
   float zStepsPerMM = myPrgVar.getFloat("$102");
   float zStepOff = myPrgVar.getFloat("$27");
   float zAccel = myPrgVar.getFloat("$122");
+  int zDebounce = myPrgVar.getInt("$26");
   myPrgVar.end();
   //Check for any zero values implying that something is incorrect with GRBL
   if(zHomingSpeed == 0.0, zStepsPerMM == 0.0, zStepOff == 0.0, zAccel == 0.0){
@@ -709,7 +710,6 @@ bool zHoming(){
   //Set speed variables.
   zStepper->setSpeedInHz(round(zHomingSpeed));
   zStepper->setAcceleration(zAccel);
-`
   //Replace with desired ISR and ONLOW mode.
   attachInterrupt(zEndStop, homingStop, ONLOW);
   //Run backwards until limit is triggered
@@ -720,9 +720,10 @@ bool zHoming(){
   digitalWrite(zStepperEnb, LOW);
   Serial.println("ISR Fired");
   //Step off the endstop until trigger goes high
-  while(digitalRead(zEndStop) == 0){
+  delay(zDebounce);
+  do{
     zStepper->forwardStep(true);
-  }
+  }while(digitalRead(zEndStop) == 0);
   //Finish stepping
   digitalWrite(zStepperEnb, LOW);
   zStepper->forceStop();
