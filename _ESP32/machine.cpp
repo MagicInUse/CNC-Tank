@@ -321,48 +321,6 @@ void handleSpindleSpeed() {
     server.send(200, "application/json", responseStr);
 }
 
-//TO-DO Receive Z depth as a step count. Make sure to add direction and speed as well.
-void handleSpindleZDepth() {
-    if (server.hasArg("plain") == false) {
-        server.send(400, "application/json", "{\"error\": \"No data received\"}");
-        return;
-    }
-
-    String body = server.arg("plain");
-    StaticJsonDocument<200> doc;
-    DeserializationError error = deserializeJson(doc, body);
-
-    if (error) {
-        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
-        return;
-    }
-
-    if (!doc["command"].containsKey("direction") ||
-        !doc["command"].containsKey("speed") ||
-        !doc["command"].containsKey("step")) {
-        server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
-        return;
-    }
-
-    String direction = doc["command"]["direction"];
-    int speed = doc["command"]["speed"];
-    int step = doc["command"]["step"];
-
-    //To-DO Use new stepper control function to accept commands from console.
-
-    sendConsoleMessage("info", "Z-axis movement: Direction=" + direction + 
-                              ", Step=" + String(step) + 
-                              ", Speed=" + String(speed));
-
-    StaticJsonDocument<200> response;
-    response["status"] = "success";
-    response["command"] = doc["command"];
-    
-    String responseStr;
-    serializeJson(response, responseStr);
-    server.send(200, "application/json", responseStr);
-}
-
 // OTA update handlers
 void handleUpdate() {
     server.sendHeader("Connection", "close");
@@ -624,6 +582,45 @@ void handleGrblUpdate() {
     } else {
         server.send(500, "application/json", "{\"error\": \"Failed to update setting\"}");
     }
+}
+
+//TO-DO Receive Z depth as a step count. Make sure to add direction and speed as well.
+void handleSpindleZDepth() {
+    if (server.hasArg("plain") == false) {
+        server.send(400, "application/json", "{\"error\": \"No data received\"}");
+        return;
+    }
+
+    String body = server.arg("plain");
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
+        return;
+    }
+    
+    int speed = doc["command"]["speed"];
+    int step = doc["command"]["step"];
+
+    if (speed != 0 ||
+        step != 0) {
+        server.send(400, "application/json", "{\"error\": \"Missing keys\"}");
+        return;
+    }
+
+    //To-DO Use new stepper control function to accept commands from console.
+
+    sendConsoleMessage("info", "Step=" + String(step) + 
+                              ", Speed=" + String(speed));
+
+    StaticJsonDocument<200> response;
+    response["status"] = "success";
+    response["command"] = doc["command"];
+    
+    String responseStr;
+    serializeJson(response, responseStr);
+    server.send(200, "application/json", responseStr);
 }
 
 void handleHoming() {

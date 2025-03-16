@@ -80,10 +80,9 @@ export const setSpindleSpeed = async (req, res) => {
 };
 
 export const setSpindleZDepth = async (req, res) => {
-    const { depth } = req.body;
-
-    if (typeof depth !== 'number') {
-        return res.status(400).json({ error: 'Invalid spindle Z depth value' });
+    const { step,speed } = req.body;
+    if (typeof step !== 'number' && typeof speed !== 'number') {
+        return res.status(400).json({ error: 'Invalid spindle Z depth value or speed.' });
     }
 
     if (!ESP32_BASE_URL) {
@@ -92,7 +91,7 @@ export const setSpindleZDepth = async (req, res) => {
 
     try {
         // Send the depth value to the ESP32
-        const response = await axios.post(`${ESP32_BASE_URL}/api/spindle/depth`, { depth });
+        const response = await axios.post(`${ESP32_BASE_URL}/api/spindle/depth`, { step,speed });
         res.json(response.data);
     } catch (error) {
         const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
