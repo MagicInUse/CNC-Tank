@@ -600,15 +600,13 @@ void handleSpindleZDepth() {
         return;
     }
     
-    int speed = doc["command"]["speed"];
-    int step = doc["command"]["step"];
-
-    if (speed != 0 ||
-        step != 0) {
+    int speed = doc["speed"];
+    int step = doc["step"];
+    if (speed == 0 ||
+        step == 0) {
         server.send(400, "application/json", "{\"error\": \"Missing keys\"}");
         return;
     }
-
     //To-DO Use new stepper control function to accept commands from console.
 
     sendConsoleMessage("info", "Step=" + String(step) + 
