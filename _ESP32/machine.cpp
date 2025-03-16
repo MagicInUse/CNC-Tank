@@ -570,6 +570,9 @@ void handleGrblUpdate() {
     }
     
     myPrgVar.end();
+
+    //In case any of the settings are updated, the accelerations need to be updated as well.
+    setAccelerations();
     
     if (success) {
         StaticJsonDocument<200> response;
@@ -584,8 +587,30 @@ void handleGrblUpdate() {
     }
 }
 
+void setAccelerations(){
+    //Capture the required parameters from the namespace, "GRBL"
+    myPrgVar.begin("GBRL", true);
+    //Four parameters - Xacceleration, Yacceleration, Zacceleration
+    float xAccel = myPrgVar.getFloat("$120");
+    float yAccel = myPrgVar.getFloat("$121");
+    float zAccel = myPrgVar.getFloat("$122");
+    myPrgVar.end();
+    //Set the accelerations for the steppers.
+    zStepper->setAcceleration(zAccel);
+    rightStepper->setAcceleration(yAccel);
+    leftStepper->setAcceleration(xAccel);
+}
+
 //TO-DO Receive Z depth as a step count. Make sure to add direction and speed as well.
 void handleSpindleZDepth() {
+    myPrgVar.begin("GBRL", true);
+    //Four parameters - Zsteps/mm, Zmax rate, zAccleration, z max travel, soft limits
+    float zSpeed = myPrgVar.getFloat("$112");
+    float zStepsPerMM = myPrgVar.getFloat("$102");
+    float zAccel = myPrgVar.getFloat("$122");
+    float zMaxTravel = myPrgVar.getFloat("$132");
+    bool softLimits = myPrgVar.getBool("$20");
+    myPrgVar.end();
     if (server.hasArg("plain") == false) {
         server.send(400, "application/json", "{\"error\": \"No data received\"}");
         return;
@@ -608,6 +633,27 @@ void handleSpindleZDepth() {
         return;
     }
     //To-DO Use new stepper control function to accept commands from console.
+    //Enforce soft limits if enabled.
+    if(softLimits){
+      if((step * zStepsPerMM) > (zMaxTravel * zStepsPerMM)){
+        server.send(400, "application/json", "{\"error\": \"Z depth exceeds maximum travel\"}");
+        return;
+      }
+    }
+
+    //Enforce maximum speed.
+    if(speed > zSpeed){
+      speed = zSpeed;
+    }
+
+    //Determine period for the step delay
+    speed = round((zStepsPerMM * speed) / 60);
+
+    //Determine the actual number of steps required:
+    step = round(step * zStepsPerMM);
+
+    //Run the stepper control function.
+    stepperController(0, 0, step, 0, 0, zSpeed);
 
     sendConsoleMessage("info", "Step=" + String(step) + 
                               ", Speed=" + String(speed));
@@ -652,9 +698,9 @@ void handleHoming() {
 //Might require a period master argument as well to determine blocking based off of period instead of distance. 
 bool stepperController(int leftSteps, int rightSteps, int zSteps, int leftPeriod, int rightPeriod, int zPeriod){
     //Configure speeds for the steppers.
-    zStepper->setSpeedInUs(zPeriod);
-    leftStepper->setSpeedInUs(leftPeriod);
-    rightStepper->setSpeedInUs(rightPeriod);
+    zStepper->setSpeedInHz(zPeriod);
+    leftStepper->setSpeedInHz(leftPeriod);
+    rightStepper->setSpeedInHz(rightPeriod);
     //Acclerations should be constant...
     //Check for the maximum number of steps to be the blocking variable. Left and Right should move together. In case left has the most steps:
     if(abs(leftSteps) > abs(rightSteps) && abs(leftSteps) > abs(zSteps)){
@@ -798,6 +844,8 @@ void setup() {
         Serial.println(0);
       }
     }
+
+    setAccelerations();
 
     //Retrieve network credentials for network.
     myPrgVar.begin("credentials", true);

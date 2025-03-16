@@ -245,7 +245,7 @@ const handleSpindleSpeedCommit = async () => {
             axis: 'z',
             direction: direction.toLowerCase(),
             speed: selectedSpeed,
-            step: selectedStep
+            step: isUp ? -selectedStep : selectedStep
         };
         
         logRequest(`Sending Z-axis command: ${direction} (Speed: ${selectedSpeed}, Step: ${selectedStep})`);
