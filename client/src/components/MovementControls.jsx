@@ -249,8 +249,9 @@ const handleSpindleSpeedCommit = async () => {
         };
         
         logRequest(`Sending Z-axis command: ${direction} (Speed: ${selectedSpeed}, Step: ${selectedStep})`);
-        
-        const response = await fetch('http://localhost:3001/api/control', {
+        // Changed endpoint for testing purposes
+        // const response = await fetch('http://localhost:3001/api/control', {
+        const response = await fetch('http://localhost:3001/api/control/spindle/depth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
