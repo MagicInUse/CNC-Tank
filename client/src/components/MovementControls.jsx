@@ -313,6 +313,37 @@ const handleSpindleSpeedCommit = async () => {
       updateZStatus('home');
     }, 1000);
   };
+
+  const handleDirectionalMove = async (direction) => {
+    try {
+      const command = {
+        direction,
+        speed: selectedSpeed,
+        step: selectedStep
+      };
+      
+      logRequest(`Sending directional command: ${direction} (Speed: ${selectedSpeed}, Step: ${selectedStep})`);
+      
+      const response = await fetch('http://localhost:3001/api/control', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(command)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        logError(`Failed to execute ${direction} movement: ${errorData.message || 'Unknown error'}`);
+        return;
+      }
+
+      const data = await response.json();
+      logResponse(`${direction} movement executed successfully`);
+    } catch (error) {
+      logError(`Error executing ${direction} movement: ${error.message}`);
+    }
+  };
   
   // TODO: set machine state based on API response
 
@@ -491,31 +522,63 @@ const handleSpindleSpeedCommit = async () => {
       </div>
       {/* Directional Control */}
       <div className="grid grid-cols-3 gap-2 w-40">
-        <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
+        <button 
+          type="button" 
+          onClick={() => handleDirectionalMove('forwardLeft45')}
+          className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
+        >
           <CurvedArrowSVG className="w-full h-full" />
         </button>
-        <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
+        <button 
+          type="button"
+          onClick={() => handleDirectionalMove('straight')} 
+          className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
+        >
           <ArrowUpSVG className="w-full h-full" />
         </button>
-        <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
+        <button 
+          type="button"
+          onClick={() => handleDirectionalMove('forwardRight45')}
+          className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
+        >
           <CurvedArrowSVG className="w-full h-full -scale-x-100" />
         </button>
-        <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
+        <button 
+          type="button"
+          onClick={() => handleDirectionalMove('standingLeft45')}
+          className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
+        >
           <ArrowUpSVG className="w-full h-full -rotate-90" />
         </button>
         <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
           {getMovementCenterButtonSVG()}
         </button>
-        <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
+        <button 
+          type="button"
+          onClick={() => handleDirectionalMove('standingRight45')}
+          className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
+        >
           <ArrowUpSVG className="w-full h-full rotate-90" />
         </button>
-        <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
+        <button 
+          type="button"
+          onClick={() => handleDirectionalMove('backwardLeft45')}
+          className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
+        >
           <CurvedArrowSVG className="w-full h-full -scale-y-100" />
         </button>
-        <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
+        <button 
+          type="button"
+          onClick={() => handleDirectionalMove('backward')}
+          className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
+        >
           <ArrowUpSVG className="w-full h-full rotate-180" />
         </button>
-        <button type="button" className="w-12 h-12 p-2 rounded-lg flex items-center justify-center">
+        <button 
+          type="button"
+          onClick={() => handleDirectionalMove('backwardRight45')}
+          className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
+        >
           <CurvedArrowSVG className="w-full h-full -scale-x-100 -scale-y-100" />
         </button>
       </div>

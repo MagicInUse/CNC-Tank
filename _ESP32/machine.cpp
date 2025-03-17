@@ -187,34 +187,66 @@ void handleControl() {
         return;
     }
     
-    if (!doc["command"].containsKey("axis") || 
-        !doc["command"].containsKey("direction") ||
-        !doc["command"].containsKey("speed") ||
-        !doc["command"].containsKey("step")) {
+    if (!doc.containsKey("direction") ||
+        !doc.containsKey("speed") ||
+        !doc.containsKey("step")) {
         server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
         return;
     }
     
-    String axis = doc["command"]["axis"];
-    String direction = doc["command"]["direction"];
-    int speed = doc["command"]["speed"];
-    int step = doc["command"]["step"];
-    
-    Serial.println("Received command:");
-    Serial.println("Axis: " + axis);
-    Serial.println("Direction: " + direction);
-    Serial.println("Speed: " + String(speed));
-    Serial.println("Step: " + String(step));
-    
-    sendConsoleMessage("info", "Received command: Axis=" + axis + ", Direction=" + direction + ", Speed=" + String(speed) + ", Step=" + String(step));
-    
-    StaticJsonDocument<200> response;
-    response["status"] = "success";
-    response["command"] = doc["command"];
-    
-    String responseStr;
-    serializeJson(response, responseStr);
-    server.send(200, "application/json", responseStr);
+    String direction = doc["direction"];
+    int speed = doc["speed"];
+    int step = doc["step"];
+
+    // Calculate steps based on direction
+    int leftSteps = 0;
+    int rightSteps = 0;
+
+    if (direction == "straight") {
+        leftSteps = rightSteps = step;
+    }
+    else if (direction == "backward") {
+        leftSteps = rightSteps = -step;
+    }
+    else if (direction == "forwardLeft45") {
+        leftSteps = step/2;
+        rightSteps = step;
+    }
+    else if (direction == "forwardRight45") {
+        leftSteps = step;
+        rightSteps = step/2;
+    }
+    else if (direction == "standingLeft45") {
+        leftSteps = -step;
+        rightSteps = step;
+    }
+    else if (direction == "standingRight45") {
+        leftSteps = step;
+        rightSteps = -step;
+    }
+    else if (direction == "backwardLeft45") {
+        leftSteps = -step;
+        rightSteps = -step/2;
+    }
+    else if (direction == "backwardRight45") {
+        leftSteps = -step/2;
+        rightSteps = -step;
+    }
+
+    // Execute movement
+    if (stepperController(leftSteps, rightSteps, 0, speed, speed, 0)) {
+        StaticJsonDocument<200> response;
+        response["status"] = "success";
+        response["direction"] = direction;
+        response["speed"] = speed;
+        response["step"] = step;
+        
+        String responseStr;
+        serializeJson(response, responseStr);
+        server.send(200, "application/json", responseStr);
+    } else {
+        server.send(500, "application/json", "{\"error\": \"Movement failed\"}");
+    }
 }
 
 //TO-DO Add a switch on/off for the Laser. Laser SHOULD not be left running for long periods of time. Consider adding a non-blocking timer.
