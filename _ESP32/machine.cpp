@@ -580,17 +580,21 @@ void handleControl() {
         return;
     }
     
-    if (!doc.containsKey("direction") ||
-        !doc.containsKey("speed") ||
-        !doc.containsKey("step")) {
+    int direction = doc["direction"];
+    int speed = doc["speed"];
+    int step = doc["step"];
+
+    sendConsoleMessage("info","Step=" + String(step) + 
+                              ", Speed=" + String(speed) +
+                              ", Direction=" + String(direction));
+
+    if (speed == 0 ||
+        step == 0 ||
+        direction == 0) {
         server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
         return;
     }
     
-    String direction = doc["direction"];
-    int speed = doc["speed"];
-    int step = doc["step"];
-
     //Enforce maximum speed. (Based off left track for now.)
     if(speed > xSpeed){
       speed = xSpeed;
@@ -607,7 +611,7 @@ void handleControl() {
     speed = round((xStepsPerMM * speed) / 60);
     
     //Will need to add logic for the direction invert pin mask. For now, assume that the direction is correct.
-    switch (direction.toInt()) {
+    switch (direction) {
         case 0: // forward - both tracks forward at equal speed - if it doesn't go straight towards the motors - reverse the phases at the stepper driver.
             leftSteps = rightSteps = step;
             break;
