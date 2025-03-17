@@ -574,24 +574,22 @@ void handleControl() {
     String body = server.arg("plain");
     StaticJsonDocument<200> doc;
     DeserializationError error = deserializeJson(doc, body);
-
+    
     if (error) {
         server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
         return;
     }
     
+    //Serial.println(doc);
+    Serial.println(body);
+
     int direction = doc["direction"];
     int speed = doc["speed"];
     int step = doc["step"];
 
-    sendConsoleMessage("info","Step=" + String(step) + 
-                              ", Speed=" + String(speed) +
-                              ", Direction=" + String(direction));
-
     if (speed == 0 ||
-        step == 0 ||
-        direction == 0) {
-        server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
+        step == 0) {
+        server.send(400, "application/json", "{\"error\": \"Missing required parameters ESP32\"}");
         return;
     }
     
