@@ -1,10 +1,21 @@
 import axios from 'axios';
 import { ESP32_BASE_URL } from '../config/esp32.js';
 
-export const sendCommand = async (req, res) => {
-    const command = req.body;
+const DIRECTION_MAP = {
+    'forward': 0,      // straight -> forward for clarity
+    'backward': 1,     // unchanged
+    'forwardLeft': 2,  // forwardLeft45 -> forwardLeft for simplicity
+    'forwardRight': 3, // forwardRight45 -> forwardRight for simplicity
+    'turnLeft': 4,     // standingLeft45 -> turnLeft for clarity
+    'turnRight': 5,    // standingRight45 -> turnRight for clarity
+    'backwardLeft': 6, // backwardLeft45 -> backwardLeft for simplicity
+    'backwardRight': 7 // backwardRight45 -> backwardRight for simplicity
+};
 
-    if (!command || !command.axis || !command.direction || !command.speed || !command.step) {
+export const sendCommand = async (req, res) => {
+    const { direction, speed, step } = req.body;
+
+    if (!direction || !speed || !step) {
         return res.status(400).json({ error: 'Missing required command parameters' });
     }
 
@@ -12,18 +23,17 @@ export const sendCommand = async (req, res) => {
         return res.status(400).json({ error: 'ESP32 not connected. Please set IP address first.' });
     }
 
-    try {
-        // Format command to match ESP32's expected structure
-        const commandData = {
-            command: {
-                axis: command.axis,
-                direction: command.direction,
-                speed: command.speed,
-                step: command.step
-            }
-        };
+    // Convert direction string to integer
+    const directionCode = DIRECTION_MAP[direction];
+    if (directionCode === undefined) {
+        return res.status(400).json({ 
+            error: `Invalid direction command. Valid directions are: ${Object.keys(DIRECTION_MAP).join(', ')}`
+        });
+    }
 
-        const response = await axios.post(`${ESP32_BASE_URL}/api/control`, commandData);
+    try {
+        const direction = directionCode;
+        const response = await axios.post(`${ESP32_BASE_URL}/api/control`, { direction, speed, step });
         res.json(response.data);
     } catch (error) {
         const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
