@@ -5,6 +5,9 @@ CNC-Tank is a comprehensive full-stack application designed to control and monit
 ## Most Recent Screenshot
 ![Most Recent Screenshot](.progress/draft6.png)
 
+## First Movement Tests
+[Watch on YouTube](https://youtu.be/2G3iSyjLAHg)
+
 ## Features
 
 ### Frontend
