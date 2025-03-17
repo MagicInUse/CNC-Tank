@@ -1,10 +1,21 @@
 import axios from 'axios';
 import { ESP32_BASE_URL } from '../config/esp32.js';
 
+const DIRECTION_MAP = {
+    'straight': 0,
+    'backward': 1,
+    'forwardLeft45': 2,
+    'forwardRight45': 3,
+    'standingLeft45': 4,
+    'standingRight45': 5,
+    'backwardLeft45': 6,
+    'backwardRight45': 7
+};
+
 export const sendCommand = async (req, res) => {
     const command = req.body;
 
-    if (!command || !command.axis || !command.direction || !command.speed || !command.step) {
+    if (!command || !command.direction || !command.speed || !command.step) {
         return res.status(400).json({ error: 'Missing required command parameters' });
     }
 
@@ -12,12 +23,17 @@ export const sendCommand = async (req, res) => {
         return res.status(400).json({ error: 'ESP32 not connected. Please set IP address first.' });
     }
 
+    // Convert direction string to integer
+    const directionCode = DIRECTION_MAP[command.direction];
+    if (directionCode === undefined) {
+        return res.status(400).json({ error: 'Invalid direction command' });
+    }
+
     try {
         // Format command to match ESP32's expected structure
         const commandData = {
             command: {
-                axis: command.axis,
-                direction: command.direction,
+                direction: directionCode, // Send integer instead of string
                 speed: command.speed,
                 step: command.step
             }

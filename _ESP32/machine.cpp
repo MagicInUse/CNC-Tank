@@ -171,84 +171,6 @@ void sendConsoleMessage(const String& type, const String& message) {
     http.end();
 }
 
-//TO-DO Function needs to be expanded to: Receive step commands for L, R steppers to include direction, step count, and speed in Hz.
-void handleControl() {
-    if (server.hasArg("plain") == false) {
-        server.send(400, "application/json", "{\"error\": \"No data received\"}");
-        return;
-    }
-    
-    String body = server.arg("plain");
-    StaticJsonDocument<200> doc;
-    DeserializationError error = deserializeJson(doc, body);
-    
-    if (error) {
-        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
-        return;
-    }
-    
-    if (!doc.containsKey("direction") ||
-        !doc.containsKey("speed") ||
-        !doc.containsKey("step")) {
-        server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
-        return;
-    }
-    
-    String direction = doc["direction"];
-    int speed = doc["speed"];
-    int step = doc["step"];
-
-    // Calculate steps based on direction
-    int leftSteps = 0;
-    int rightSteps = 0;
-
-    if (direction == "straight") {
-        leftSteps = rightSteps = step;
-    }
-    else if (direction == "backward") {
-        leftSteps = rightSteps = -step;
-    }
-    else if (direction == "forwardLeft45") {
-        leftSteps = step/2;
-        rightSteps = step;
-    }
-    else if (direction == "forwardRight45") {
-        leftSteps = step;
-        rightSteps = step/2;
-    }
-    else if (direction == "standingLeft45") {
-        leftSteps = -step;
-        rightSteps = step;
-    }
-    else if (direction == "standingRight45") {
-        leftSteps = step;
-        rightSteps = -step;
-    }
-    else if (direction == "backwardLeft45") {
-        leftSteps = -step;
-        rightSteps = -step/2;
-    }
-    else if (direction == "backwardRight45") {
-        leftSteps = -step/2;
-        rightSteps = -step;
-    }
-
-    // Execute movement
-    if (stepperController(leftSteps, rightSteps, 0, speed, speed, 0)) {
-        StaticJsonDocument<200> response;
-        response["status"] = "success";
-        response["direction"] = direction;
-        response["speed"] = speed;
-        response["step"] = step;
-        
-        String responseStr;
-        serializeJson(response, responseStr);
-        server.send(200, "application/json", responseStr);
-    } else {
-        server.send(500, "application/json", "{\"error\": \"Movement failed\"}");
-    }
-}
-
 //TO-DO Add a switch on/off for the Laser. Laser SHOULD not be left running for long periods of time. Consider adding a non-blocking timer.
 void handleLaser() {
     if (server.hasArg("plain") == false) {
@@ -633,7 +555,110 @@ void setAccelerations(){
     leftStepper->setAcceleration(xAccel);
 }
 
-//TO-DO Receive Z depth as a step count. Make sure to add direction and speed as well.
+//TODO Function Needs to receive commands from the console and execute them. Expected to turn the robot in the direction specified by the command.
+//rates are based off the X GRBL data
+void handleControl() {
+    myPrgVar.begin("GBRL", true);
+    //Required parameters = X-Axis steps/mm, X max rate, Y-Axis steps/mm, Y max rate
+    float xSpeed = myPrgVar.getFloat("$110");
+    float xStepsPerMM = myPrgVar.getFloat("$100");
+    // float ySpeed = myPrgVar.getFloat("$111");
+    // float yStepsPerMM = myPrgVar.getFloat("$101");
+    myPrgVar.end();
+    
+    if (server.hasArg("plain") == false) {
+        server.send(400, "application/json", "{\"error\": \"No data received\"}");
+        return;
+    }
+    
+    String body = server.arg("plain");
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, body);
+    
+    if (error) {
+        server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
+        return;
+    }
+    
+    if (!doc.containsKey("direction") ||
+        !doc.containsKey("speed") ||
+        !doc.containsKey("step")) {
+        server.send(400, "application/json", "{\"error\": \"Missing required parameters\"}");
+        return;
+    }
+    
+    String direction = doc["direction"];
+    int speed = doc["speed"];
+    int step = doc["step"];
+
+    //Enforce maximum speed. (Based off left track for now.)
+    if(speed > xSpeed){
+      speed = xSpeed;
+    }
+
+    // Calculate steps based on direction
+    int leftSteps = 0;
+    int rightSteps = 0;
+
+    //Calculate the number of steps required for the left and right tracks.
+    step = round(step * xStepsPerMM);
+
+    //Calculate the delay between steps
+    speed = round((xStepsPerMM * speed) / 60);
+    
+    //Will need to add logic for the direction invert pin mask. For now, assume that the direction is correct.
+    switch (direction.toInt()) {
+        case 0: // straight - if it doesn't go straight towards the motors - reverse the phases at the stepper driver.
+            leftSteps = rightSteps = step;
+            break;
+        case 1: // backward
+            leftSteps = rightSteps = -step;
+            break;
+        case 2: // forwardLeft45
+            leftSteps = step/2;
+            rightSteps = step;
+            break;
+        case 3: // forwardRight45
+            leftSteps = step;
+            rightSteps = step/2;
+            break;
+        case 4: // standingLeft45
+            leftSteps = -step;
+            rightSteps = step;
+            break;
+        case 5: // standingRight45
+            leftSteps = step;
+            rightSteps = -step;
+            break;
+        case 6: // backwardLeft45
+            leftSteps = -step;
+            rightSteps = -step/2;
+            break;
+        case 7: // backwardRight45
+            leftSteps = -step/2;
+            rightSteps = -step;
+            break;
+        default:
+            leftSteps = rightSteps = 0;
+            break;
+    }
+
+    // Execute movement
+    if (stepperController(leftSteps, rightSteps, 0, speed, speed, 0)) {
+        StaticJsonDocument<200> response;
+        response["status"] = "success";
+        response["direction"] = direction;
+        response["speed"] = speed;
+        response["step"] = step;
+        
+        String responseStr;
+        serializeJson(response, responseStr);
+        server.send(200, "application/json", responseStr);
+    } else {
+        server.send(500, "application/json", "{\"error\": \"Movement failed\"}");
+    }
+}
+
 void handleSpindleZDepth() {
     myPrgVar.begin("GBRL", true);
     //Four parameters - Zsteps/mm, Zmax rate, zAccleration, z max travel, soft limits
