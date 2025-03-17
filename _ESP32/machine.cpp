@@ -574,7 +574,7 @@ void handleControl() {
     String body = server.arg("plain");
     StaticJsonDocument<200> doc;
     DeserializationError error = deserializeJson(doc, body);
-    
+
     if (error) {
         server.send(400, "application/json", "{\"error\": \"Invalid JSON\"}");
         return;

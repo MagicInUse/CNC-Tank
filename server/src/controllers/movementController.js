@@ -13,7 +13,7 @@ const DIRECTION_MAP = {
 };
 
 export const sendCommand = async (req, res) => {
-    const { direction, speed, step} = req.body;
+    const { direction, speed, step } = req.body;
 
     if (!direction || !speed || !step) {
         return res.status(400).json({ error: 'Missing required command parameters' });
@@ -32,16 +32,8 @@ export const sendCommand = async (req, res) => {
     }
 
     try {
-        // Format command to match ESP32's expected structure
-        const command = {
-            command: {
-                direction: directionCode,
-                speed: speed,         // Use destructured speed variable
-                step: step           // Use destructured step variable
-            }
-        };
-
-        const response = await axios.post(`${ESP32_BASE_URL}/api/control`, command);
+        const direction = directionCode;
+        const response = await axios.post(`${ESP32_BASE_URL}/api/control`, { direction, speed, step });
         res.json(response.data);
     } catch (error) {
         const errorMessage = error.response?.data?.error || 'Error connecting to ESP32';
