@@ -2,14 +2,14 @@ import axios from 'axios';
 import { ESP32_BASE_URL } from '../config/esp32.js';
 
 const DIRECTION_MAP = {
-    'straight': 0,
-    'backward': 1,
-    'forwardLeft45': 2,
-    'forwardRight45': 3,
-    'standingLeft45': 4,
-    'standingRight45': 5,
-    'backwardLeft45': 6,
-    'backwardRight45': 7
+    'forward': 0,      // straight -> forward for clarity
+    'backward': 1,     // unchanged
+    'forwardLeft': 2,  // forwardLeft45 -> forwardLeft for simplicity
+    'forwardRight': 3, // forwardRight45 -> forwardRight for simplicity
+    'turnLeft': 4,     // standingLeft45 -> turnLeft for clarity
+    'turnRight': 5,    // standingRight45 -> turnRight for clarity
+    'backwardLeft': 6, // backwardLeft45 -> backwardLeft for simplicity
+    'backwardRight': 7 // backwardRight45 -> backwardRight for simplicity
 };
 
 export const sendCommand = async (req, res) => {
@@ -22,11 +22,13 @@ export const sendCommand = async (req, res) => {
     if (!ESP32_BASE_URL) {
         return res.status(400).json({ error: 'ESP32 not connected. Please set IP address first.' });
     }
-
+    
     // Convert direction string to integer
     const directionCode = DIRECTION_MAP[command.direction];
     if (directionCode === undefined) {
-        return res.status(400).json({ error: 'Invalid direction command' });
+        return res.status(400).json({ 
+            error: `Invalid direction command. Valid directions are: ${Object.keys(DIRECTION_MAP).join(', ')}`
+        });
     }
 
     try {

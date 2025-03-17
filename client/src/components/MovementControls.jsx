@@ -524,28 +524,28 @@ const handleSpindleSpeedCommit = async () => {
       <div className="grid grid-cols-3 gap-2 w-40">
         <button 
           type="button" 
-          onClick={() => handleDirectionalMove('forwardLeft45')}
+          onClick={() => handleDirectionalMove('forwardLeft')}
           className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
         >
           <CurvedArrowSVG className="w-full h-full" />
         </button>
         <button 
           type="button"
-          onClick={() => handleDirectionalMove('straight')} 
+          onClick={() => handleDirectionalMove('forward')} 
           className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
         >
           <ArrowUpSVG className="w-full h-full" />
         </button>
         <button 
           type="button"
-          onClick={() => handleDirectionalMove('forwardRight45')}
+          onClick={() => handleDirectionalMove('forwardRight')}
           className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
         >
           <CurvedArrowSVG className="w-full h-full -scale-x-100" />
         </button>
         <button 
           type="button"
-          onClick={() => handleDirectionalMove('standingLeft45')}
+          onClick={() => handleDirectionalMove('turnLeft')}
           className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
         >
           <ArrowUpSVG className="w-full h-full -rotate-90" />
@@ -555,14 +555,14 @@ const handleSpindleSpeedCommit = async () => {
         </button>
         <button 
           type="button"
-          onClick={() => handleDirectionalMove('standingRight45')}
+          onClick={() => handleDirectionalMove('turnRight')}
           className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
         >
           <ArrowUpSVG className="w-full h-full rotate-90" />
         </button>
         <button 
           type="button"
-          onClick={() => handleDirectionalMove('backwardLeft45')}
+          onClick={() => handleDirectionalMove('backwardLeft')}
           className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
         >
           <CurvedArrowSVG className="w-full h-full -scale-y-100" />
@@ -576,7 +576,7 @@ const handleSpindleSpeedCommit = async () => {
         </button>
         <button 
           type="button"
-          onClick={() => handleDirectionalMove('backwardRight45')}
+          onClick={() => handleDirectionalMove('backwardRight')}
           className="w-12 h-12 p-2 rounded-lg flex items-center justify-center hover:bg-gray-700"
         >
           <CurvedArrowSVG className="w-full h-full -scale-x-100 -scale-y-100" />

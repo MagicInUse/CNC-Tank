@@ -608,33 +608,33 @@ void handleControl() {
     
     //Will need to add logic for the direction invert pin mask. For now, assume that the direction is correct.
     switch (direction.toInt()) {
-        case 0: // straight - if it doesn't go straight towards the motors - reverse the phases at the stepper driver.
+        case 0: // forward - both tracks forward at equal speed - if it doesn't go straight towards the motors - reverse the phases at the stepper driver.
             leftSteps = rightSteps = step;
             break;
-        case 1: // backward
+        case 1: // backward - both tracks backward at equal speed
             leftSteps = rightSteps = -step;
             break;
-        case 2: // forwardLeft45
+        case 2: // forwardLeft - left track at half speed, right track at full speed
             leftSteps = step/2;
             rightSteps = step;
             break;
-        case 3: // forwardRight45
+        case 3: // forwardRight - left track at full speed, right track at half speed
             leftSteps = step;
             rightSteps = step/2;
             break;
-        case 4: // standingLeft45
+        case 4: // turnLeft - left track backward, right track forward (spin in place)
             leftSteps = -step;
             rightSteps = step;
             break;
-        case 5: // standingRight45
+        case 5: // turnRight - left track forward, right track backward (spin in place)
             leftSteps = step;
             rightSteps = -step;
             break;
-        case 6: // backwardLeft45
+        case 6: // backwardLeft - left track at half backward speed
             leftSteps = -step;
             rightSteps = -step/2;
             break;
-        case 7: // backwardRight45
+        case 7: // backwardRight - right track at half backward speed
             leftSteps = -step/2;
             rightSteps = -step;
             break;
