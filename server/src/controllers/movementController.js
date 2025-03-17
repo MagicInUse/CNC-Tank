@@ -13,7 +13,7 @@ const DIRECTION_MAP = {
 };
 
 export const sendCommand = async (req, res) => {
-    const command = req.body;
+    const { command } = req.body;
 
     if (!command || !command.direction || !command.speed || !command.step) {
         return res.status(400).json({ error: 'Missing required command parameters' });
@@ -22,7 +22,7 @@ export const sendCommand = async (req, res) => {
     if (!ESP32_BASE_URL) {
         return res.status(400).json({ error: 'ESP32 not connected. Please set IP address first.' });
     }
-    
+
     // Convert direction string to integer
     const directionCode = DIRECTION_MAP[command.direction];
     if (directionCode === undefined) {
