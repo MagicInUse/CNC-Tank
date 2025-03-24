@@ -611,10 +611,10 @@ void handleControl() {
     //Will need to add logic for the direction invert pin mask. For now, assume that the direction is correct.
     switch (direction) {
         case 0: // forward - both tracks forward at equal speed - if it doesn't go straight towards the motors - reverse the phases at the stepper driver.
-            leftSteps = rightSteps = step;
+            leftSteps = rightSteps = -step;
             break;
         case 1: // backward - both tracks backward at equal speed
-            leftSteps = rightSteps = -step;
+            leftSteps = rightSteps = step;
             break;
         case 2: // forwardLeft - left track at half speed, right track at full speed
             leftSteps = step/2;
