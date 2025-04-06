@@ -258,13 +258,59 @@
   }
 
   .calibration-values {
-    margin-top: 20px;
-    text-align: center;
-    color: white;
-    font-size: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Add spacing between the rows */
+    margin-top: 20px; /* Optional: Add some spacing above the container */
+    min-width: 300px; /* Set a minimum width for the container */
   }
   
   .calibration-values .value {
-    margin: 10px 0;
+    display: flex;
+    justify-content: space-between; /* Align labels to the left and values to the right */
+    width: 100%; /* Ensure the row spans the full width of the container */
+    text-align: left; /* Ensure text alignment for labels */
+  }
+
+  .go-button {
+    margin-top: 1rem;
+    background-color: #2cc51e;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+  }
+
+  .go-button:hover {
+    background-color: #3eea3e;
+    transform: scale(1.05);
+  }
+
+  .go-button:disabled {
+    background-color: #444;
+    color: #888;
+    cursor: not-allowed;
+  }
+
+  @keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+      transform: translateY(0);
+    }
+    40% {
+      transform: translateY(-10px);
+    }
+    60% {
+      transform: translateY(-5px);
+    }
   }
 }
