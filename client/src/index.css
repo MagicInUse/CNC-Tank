@@ -10,6 +10,7 @@
     font-weight: 400 !important;
     color: rgba(255, 255, 255, 0.87) !important;
     background-color: #1a1a1a !important;
+    width: 100%;
   }
 }
 
@@ -254,5 +255,16 @@
 
   .axis-button:hover {
     background-color: #ddd;
+  }
+
+  .calibration-values {
+    margin-top: 20px;
+    text-align: center;
+    color: white;
+    font-size: 1.2rem;
+  }
+  
+  .calibration-values .value {
+    margin: 10px 0;
   }
 }

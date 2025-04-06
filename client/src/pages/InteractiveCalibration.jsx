@@ -1,22 +1,46 @@
 import React, { useState } from 'react';
-import ConfigMenu from '../components/ConfigMenu'; //Components are visual aspects of the tool
-//import { useMachine } from '../context/MachineContext'; //Context(s) are used to manage the state of the tool
+import ConfigMenu from '../components/ConfigMenu';
 import Console from '../components/Console';
-//import { useConsole } from '../utils/ConsoleLog';
+
+// Truth table data
+const microstepTable = {
+  '111': 'NC',
+  '110': '1',
+  '101': '2/A',
+  '011': '2/B',
+  '100': '4',
+  '010': '8',
+  '001': '16',
+  '000': '32',
+};
+
+const currentTable = {
+  '111': '0.7A',
+  '110': '1.2A',
+  '101': '1.7A',
+  '100': '2.2A',
+  '011': '2.7A',
+  '010': '2.9A',
+  '001': '3.2A',
+  '000': '4.0A',
+};
 
 const InteractiveCalibration = () => {
-  // State to manage the 6 DIP switches (true = ON, false = OFF)
   const [switches, setSwitches] = useState([false, false, false, false, false, false]);
+  const [selectedAxis, setSelectedAxis] = useState('z');
 
-  // State to manage the selected axis for calibration
-  const [selectedAxis, setSelectedAxis] = useState('z'); // Default to 'z'
-
-  // Toggle switch state when clicked
   const toggleSwitch = (index) => {
     const newSwitches = [...switches];
     newSwitches[index] = !newSwitches[index];
     setSwitches(newSwitches);
   };
+
+  // Get binary representations for S1-S3 and S4-S6
+  const microstepKey = switches.slice(0, 3).map((s) => (s ? '0' : '1')).join('');
+  const currentKey = switches.slice(3, 6).map((s) => (s ? '0' : '1')).join('');
+
+  const microstepValue = microstepTable[microstepKey] || 'Unknown';
+  const currentValue = currentTable[currentKey] || 'Unknown';
 
   return (
     <>
@@ -69,6 +93,16 @@ const InteractiveCalibration = () => {
           <div className="on-dip-labels">
             <span className="on-label">ON</span>
             <span className="dip-label">DIP</span>
+          </div>
+        </div>
+
+        {/* Display microstep and current values */}
+        <div className="calibration-values">
+          <div className="value">
+            <strong>Microstep:</strong> {microstepValue}
+          </div>
+          <div className="value">
+            <strong>Peak Current:</strong> {currentValue}
           </div>
         </div>
       </div>
