@@ -16,6 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "concurrently": "^9.1.2",
-    "react-window": "^1.8.11"
+    "react-window": "^1.8.11",
+    "socket.io": "^4.8.1"
   }
 }

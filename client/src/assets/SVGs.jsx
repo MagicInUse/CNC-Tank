@@ -1,5 +1,27 @@
 import React from "react";
 
+export function favIconSVG(props) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 32 32"
+      width="1em"
+      height="1em"
+      {...props}
+    >
+      <path
+        fill="#22ff22"
+        d="M16 25a6.99 6.99 0 0 1-5.833-3.129l1.666-1.107a5 5 0 0 0 8.334 0l1.666 1.107A6.99 6.99 0 0 1 16 25m4-11a2 2 0 1 0 2 2a1.98 1.98 0 0 0-2-2m-8 0a2 2 0 1 0 2 2a1.98 1.98 0 0 0-2-2"
+      ></path>
+      <path
+        fill="#24aa24"
+        d="M30 16v-2h-2v-4a4.005 4.005 0 0 0-4-4h-2V2h-2v4h-8V2h-2v4H8a4.005 4.005 0 0 0-4 4v4H2v2h2v5H2v2h2v3a4.005 4.005 0 0 0 4 4h16a4.005 4.005 0 0 0 4-4v-3h2v-2h-2v-5Zm-4 10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2Z"
+      ></path>
+    </svg>
+  )
+}
+  
+
 export function HomingSVG(props) {
   return (
     <svg
@@ -89,7 +111,6 @@ export function StopSVG(props) {
   )
 }
 
-
 export function ArrowUpSVG(props) {
   return (
     <svg
@@ -106,6 +127,29 @@ export function ArrowUpSVG(props) {
     </svg>
   )
 }
+
+export function CurvedArrowSVG(props) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width="1em"
+      height="1em"
+      {...props}
+    >
+      <g
+        fill="currentColor"
+        fillRule="evenodd"
+        strokeWidth="1.5"
+        clipRule="evenodd"
+      >
+        <path d="M6.22 8.78a.75.75 0 0 1 0-1.06l3.5-3.5a.75.75 0 0 1 1.28.53v7a.75.75 0 0 1-1.28.53z"></path>
+        <path d="M9 8.25a.75.75 0 0 1 .75-.75h3a4.75 4.75 0 0 1 4.75 4.75v7a.75.75 0 0 1-1.5 0v-7A3.25 3.25 0 0 0 12.75 9h-3A.75.75 0 0 1 9 8.25"></path>
+      </g>
+    </svg>
+  )
+}
+
 
 export function NoWifiSVG(props) {
   return (

@@ -5,8 +5,8 @@ export const useConsoleLog = () => {
     const { addMessage } = useContext(ConsoleContext);
 
     return {
-        logRequest: (content) => addMessage('request', content),
-        logResponse: (content) => addMessage('response', content),
+        logRequest: (content) => addMessage('info', content),
+        logResponse: (content) => addMessage('success', content),
         logError: (content) => addMessage('error', content)
     };
 };
