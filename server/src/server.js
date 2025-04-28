@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import fileUpload from 'express-fileupload';
 import router from './routes/index.js';
-import bonjour from 'bonjour';
 import http from 'http';
 import { Server } from 'socket.io';
 
@@ -52,10 +51,6 @@ export const sendConsoleMessageToClients = (message) => {
 // Start the server
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-
-    // Set up mDNS
-    const bonjourService = bonjour();
-    bonjourService.publish({ name: 'cnc-base', type: 'http', port: PORT });
 });
 
 export default app;

@@ -58,6 +58,8 @@ export const handleFirmwareUpdate = async (req, res) => {
             timeout: 30000
         });
 
+        // TODO: Add data stream to response during upload from server to ESP32
+
         if (response.status === 200) {
             res.status(200).json({ 
                 success: true,
