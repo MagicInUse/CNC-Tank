@@ -72,7 +72,7 @@ const InteractiveCalibration = () => {
   const pulsePerRevValue = pulsePerRevTable[microstepKey] || 'Unknown';
 
   // Hardcoded speed and step
-  const selectedSpeed = 100; // Hardcoded to 100 mm/min
+  const selectedSpeed = 20400; // Hardcoded to 100 mm/min
   const selectedStep = pulsePerRevValue !== 'Unknown' ? parseInt(pulsePerRevValue, 10) : 0; // Use Pulse/Rev as step
 
   // Function to determine if the "Go" button should be disabled
@@ -160,7 +160,7 @@ const InteractiveCalibration = () => {
       <ConfigMenu />
       <div className="dip-switch-container">
         <h1 className="title">Interactive Calibration.</h1>
-        <p> Please set X, Y, Z steps/mm to 1 in GRBL settings. These will be changed after calibration. </p>
+        <p> Please set X, Y, Z steps/mm to 1 in GRBL settings. These will be changed after calibration. Please allow 20400 as Max Rate for X, Y, Z. Then return them to base speed. </p>
 
         {/* Axis selection */}
         <div className="axis-selection">

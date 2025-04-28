@@ -712,7 +712,7 @@ void handleSpindleZDepth() {
     step = round(step * zStepsPerMM);
 
     //Run the stepper control function.
-    stepperController(0, 0, step, 0, 0, zSpeed);
+    stepperController(0, 0, step, 0, 0, speed);
 
     sendConsoleMessage("info", "Step=" + String(step) + 
                               ", Speed=" + String(speed));
