@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useRef } from 'react';
 import { useConsoleLog } from '../utils/ConsoleLog';
-import { useMachine } from '../context/MachineContext';
+import axios from 'axios';
 import { GRBL_DESCRIPTIONS } from '../config/grblSettings';
-import LoadingButton from './LoadingButton';
+import { useMachine } from '../context/MachineContext';
+import Throbber from './Throbber';
 import logo from '../assets/logo.png';
 
 const ConfigMenu = () => {
@@ -14,7 +14,7 @@ const ConfigMenu = () => {
     const [vacuumOnly, setVacuumOnly] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState('unknown'); // 'unknown', 'connected', 'failed'
     const [overrideDNS, setOverrideDNS] = useState(false);
-    const { setStatus, grblSettings, setGrblSettings } = useMachine();
+    const { grblSettings, isGrblLoaded, updateGrblSetting, status, setStatus } = useMachine();
     const [showGrblSettings, setShowGrblSettings] = useState(false);
     const [editingKey, setEditingKey] = useState(null);
     const [hasChanges, setHasChanges] = useState(false);
@@ -47,22 +47,22 @@ const ConfigMenu = () => {
                 
                 if (response.data.status === 'connected') {
                     setConnectionStatus('connected');
+                    setStatus('connected'); // Update MachineContext status
                     logResponse(`Successfully connected to ${ipAddress}`);
-                    setStatus('connected');
                 } else {
                     setConnectionStatus('failed');
+                    setStatus('failed'); // Update MachineContext status
                     logError(`Failed to connect to ${ipAddress}`);
-                    setStatus('failed');
                 }
             } catch (error) {
                 setConnectionStatus('failed');
+                setStatus('failed'); // Update MachineContext status
                 logError(`Connection error: ${error.message}`);
-                setStatus('failed');
             }
         }, 1000);
     
         return () => clearTimeout(timeoutId);
-    }, [ipAddress, isValid]);
+    }, [ipAddress, isValid, setStatus]);
     
     const formatIP = (input) => {
         // Handle empty or invalid input
@@ -168,24 +168,6 @@ const ConfigMenu = () => {
         }
     };
 
-    // Add GRBL settings fetching
-    const fetchGrblSettings = async () => {
-        try {
-            const response = await axios.get('http://localhost:3001/api/config/grbl');
-            setGrblSettings(response.data.settings);
-            logResponse('GRBL settings loaded');
-        } catch (error) {
-            logError(`Failed to load GRBL settings: ${error.message}`);
-        }
-    };
-
-    // Fetch GRBL settings when connection status changes to 'connected'
-    useEffect(() => {
-        if (connectionStatus === 'connected') {
-            fetchGrblSettings();
-        }
-    }, [connectionStatus]);
-
     const handleSettingClick = (key, setting) => {
         // Only set editing state for non-boolean values
         if (setting.type !== 'bool') {
@@ -203,20 +185,8 @@ const ConfigMenu = () => {
         logRequest(`Updating ${key} (${description}): ${oldValue} → ${newValue}`);
 
         try {
-            const response = await axios.post('http://localhost:3001/api/config/grbl', {
-                key: key,
-                value: newValue
-            });
-
-            if (response.data.status === 'success') {
-                setGrblSettings(prev => ({
-                    ...prev,
-                    [key]: {
-                        ...prev[key],
-                        value: newValue
-                    }
-                }));
-
+            const success = await updateGrblSetting(key, newValue);
+            if (success) {
                 logResponse(`Successfully updated ${key}`);
                 logRequest(`${description}`); // Request for blue text
                 logError(`Old value: ${oldValue}`); // Error for red text
@@ -256,20 +226,9 @@ const ConfigMenu = () => {
         logRequest(`Updating ${editingKey} (${description}): ${oldValue}${unit} → ${processedValue}${unit}`);
 
         try {
-            const response = await axios.post('http://localhost:3001/api/config/grbl', {
-                key: editingKey,
-                value: processedValue
-            });
-
-            if (response.data.status === 'success') {
-                setGrblSettings(prev => ({
-                    ...prev,
-                    [editingKey]: {
-                        ...prev[editingKey],
-                        value: processedValue
-                    }
-                }));
-
+            const success = await updateGrblSetting(editingKey, processedValue);
+            
+            if (success) {
                 logResponse(`Successfully updated ${editingKey}`);
                 logRequest(`${description}`); // Request for blue text
                 logError(`Old value: ${oldValue}`); // Error for red text
@@ -290,7 +249,14 @@ const ConfigMenu = () => {
     };
 
     const renderGrblSettings = () => {
-        if (!grblSettings) return null;
+        if (!grblSettings) {
+            return (
+                <div className="mt-4 text-center">
+                    <Throbber size="medium" />
+                    <p className="mt-2 text-sm">Loading GRBL settings...</p>
+                </div>
+            );
+        }
 
         return (
             <div className="mt-4 max-h-[250px] overflow-y-auto">
@@ -298,7 +264,7 @@ const ConfigMenu = () => {
                 <div className="space-y-1">
                     {Object.entries(grblSettings).map(([key, setting]) => (
                         <div key={key} className="group relative">
-                            <LoadingButton
+                            <Throbber
                                 isLoading={loadingSetting === key}
                                 className="w-full flex items-center justify-between text-sm p-1 rounded transition-colors relative bg-transparent hover:bg-gray-700/80"
                                 onClick={() => setting.type !== 'bool' && handleSettingClick(key, setting)}
@@ -340,7 +306,7 @@ const ConfigMenu = () => {
                                         )}
                                     </div>
                                 </div>
-                            </LoadingButton>
+                            </Throbber>
                         </div>
                     ))}
                 </div>
