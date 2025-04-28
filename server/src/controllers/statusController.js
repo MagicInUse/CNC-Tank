@@ -2,6 +2,7 @@ import axios from 'axios';
 import { networkInterfaces } from 'os';
 import { ESP32_BASE_URL, setESP32BaseURL } from '../config/esp32.js';
 import { ConsoleContext } from '../utils/ConsoleContext.js';
+import { PlannerInstance } from '../utils/Planner.js';
 
 const getServerIPAddress = (port) => {
     const nets = networkInterfaces();
@@ -63,4 +64,46 @@ export const handleConsoleMessage = (req, res) => {
     ConsoleContext.addMessage(type, message);
 
     res.status(200).json({ status: 'Message received' });
+};
+
+export const getCurrentPosition = (req, res) => {
+    try {
+        // Get position from the Planner
+        const { position, heading } = PlannerInstance.getPosition();
+        
+        res.json({
+            x: position.x.toFixed(2),
+            y: position.y.toFixed(2),
+            z: position.z.toFixed(2),
+            theta: heading.toFixed(2)
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Error retrieving position data'
+        });
+    }
+};
+
+export const setCurrentPosition = (req, res) => {
+    const { x, y, z, theta } = req.body;
+    
+    try {
+        // Set position in the Planner
+        PlannerInstance.setPosition(
+            x !== undefined ? parseFloat(x) : undefined,
+            y !== undefined ? parseFloat(y) : undefined,
+            z !== undefined ? parseFloat(z) : undefined,
+            theta !== undefined ? parseFloat(theta) : undefined
+        );
+        
+        res.json({
+            status: 'success',
+            message: 'Position updated successfully',
+            position: PlannerInstance.getPosition()
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Error updating position data'
+        });
+    }
 };
