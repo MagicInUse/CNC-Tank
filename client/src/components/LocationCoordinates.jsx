@@ -73,10 +73,10 @@ const LocationCoordinates = () => {
         };
 
         // Fetch position initially
-        // fetchPosition();
+        fetchPosition();
 
         // Set up interval to fetch position regularly
-        const interval = setInterval(fetchPosition, 5000);
+        const interval = setInterval(fetchPosition, 500);
         
         // Clean up interval on unmount
         return () => clearInterval(interval);

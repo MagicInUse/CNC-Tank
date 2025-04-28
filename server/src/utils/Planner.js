@@ -45,6 +45,10 @@ class Planner {
             totalLines: 0,
             onProgressCallback: null
         };
+        // Movement queue and state
+        this.movementQueue = [];        // Queue of pending movements
+        this.isMoving = false;          // Flag to track if a movement is in progress
+        this.movementTimeout = 30000;   // Timeout for movements in ms (30 seconds default)
     }
 
     // Console dependent functions/returns for ESP32 hardware offload
@@ -117,11 +121,64 @@ class Planner {
             distance
         };
     }
+    
+    /**
+     * Wait for ESP32 to complete the current movement operation
+     * Uses polling with a timeout to ensure we don't wait forever
+     */
+    async waitForMovementCompletion() {
+        if (!this.isMoving) return true;
+        
+        const startTime = Date.now();
+        
+        return new Promise((resolve, reject) => {
+            const checkStatus = async () => {
+                try {
+                    // Request the current status from ESP32
+                    const response = await axios.get(`${ESP32_BASE_URL}/api/status/busy`);
+                    
+                    // If movement is complete
+                    if (!response.data.busy) {
+                        this.isMoving = false;
+                        ConsoleContext.addMessage('info', 'ESP32 movement completed');
+                        resolve(true);
+                        return;
+                    }
+                    
+                    // Check for timeout
+                    if (Date.now() - startTime > this.movementTimeout) {
+                        this.isMoving = false;
+                        ConsoleContext.addMessage('error', `Movement timed out after ${this.movementTimeout/1000} seconds`);
+                        reject(new Error('Movement timeout'));
+                        return;
+                    }
+                    
+                    // Wait before polling again
+                    setTimeout(checkStatus, 250); // Poll every 250ms
+                } catch (error) {
+                    ConsoleContext.addMessage('warning', `Error checking ESP32 status: ${error.message}. Will retry...`);
+                    if (Date.now() - startTime > this.movementTimeout) {
+                        this.isMoving = false;
+                        reject(new Error(`Movement timeout after error: ${error.message}`));
+                    } else {
+                        // Wait before polling again
+                        setTimeout(checkStatus, 500); // Longer wait after error
+                    }
+                }
+            };
+            
+            // Start polling
+            checkStatus();
+        });
+    }
 
     /**
      * Generate command for in-place rotation
      */
     async rotateInPlace(angleToTurn, speed) {
+        // Wait for any current movement to complete
+        await this.waitForMovementCompletion();
+        
         // Tank rotation is achieved by moving tracks in opposite directions
         // Positive angle = counter-clockwise (left track back, right track forward)
         // Negative angle = clockwise (left track forward, right track back)
@@ -138,11 +195,17 @@ class Planner {
         ConsoleContext.addMessage('info', `Rotating ${angleToTurn > 0 ? 'counter-clockwise' : 'clockwise'} by ${Math.abs(angleToTurn).toFixed(2)}° (${rotationDistance.toFixed(2)}mm)`);
         
         try {
+            // Mark that we're starting a movement
+            this.isMoving = true;
+            
             const response = await axios.post(`${ESP32_BASE_URL}/api/control`, {
                 direction,
                 speed,
                 step: rotationDistance
             });
+            
+            // Wait for the movement to complete
+            await this.waitForMovementCompletion();
             
             // Update the heading
             this.heading += angleToTurn;
@@ -152,6 +215,7 @@ class Planner {
             ConsoleContext.addMessage('info', `Rotation complete. New heading: ${this.heading.toFixed(2)}°`);
             return response.data;
         } catch (error) {
+            this.isMoving = false; // Clear moving flag on error
             ConsoleContext.addMessage('error', `Rotation failed: ${error.message}`);
             throw error;
         }
@@ -161,14 +225,23 @@ class Planner {
      * Generate command for forward movement
      */
     async moveForward(distance, speed) {
+        // Wait for any current movement to complete
+        await this.waitForMovementCompletion();
+        
         ConsoleContext.addMessage('info', `Moving forward ${distance.toFixed(2)}mm at heading ${this.heading.toFixed(2)}°`);
         
         try {
+            // Mark that we're starting a movement
+            this.isMoving = true;
+            
             const response = await axios.post(`${ESP32_BASE_URL}/api/control`, {
                 direction: 'forward',
                 speed,
                 step: distance
             });
+            
+            // Wait for the movement to complete
+            await this.waitForMovementCompletion();
             
             // Update position based on heading and distance
             const radians = this.toRadians(this.heading);
@@ -178,6 +251,7 @@ class Planner {
             ConsoleContext.addMessage('info', `Move complete. New position: (${this.lastPosition.x.toFixed(2)}, ${this.lastPosition.y.toFixed(2)})`);
             return response.data;
         } catch (error) {
+            this.isMoving = false; // Clear moving flag on error
             ConsoleContext.addMessage('error', `Forward movement failed: ${error.message}`);
             throw error;
         }
@@ -225,6 +299,9 @@ class Planner {
      * Move Z axis to an absolute position
      */
     async moveToZ(targetZ, speed = 100) {
+        // Wait for any current movement to complete
+        await this.waitForMovementCompletion();
+        
         try {
             const currentZ = this.lastPosition.z;
             const deltaZ = targetZ - currentZ;
@@ -238,6 +315,9 @@ class Planner {
             ConsoleContext.addMessage('info', `Moving Z axis from ${currentZ.toFixed(2)} to ${targetZ.toFixed(2)} (deltaZ: ${deltaZ.toFixed(2)})`);
             
             try {
+                // Mark that we're starting a movement
+                this.isMoving = true;
+                
                 // The ESP32 expects:
                 // - step: raw step value (positive for downward movement, negative for upward movement)
                 // - speed: positive speed value in mm/min
@@ -246,15 +326,15 @@ class Planner {
                     speed: Math.abs(speed)  // Always positive speed
                 });
                 
+                // Wait for the movement to complete
+                await this.waitForMovementCompletion();
+                
                 // Update Z position on successful movement
-                if (response.data && response.data.status === 'success') {
-                    this.lastPosition.z = targetZ;
-                    ConsoleContext.addMessage('info', `Z movement complete. New Z: ${this.lastPosition.z.toFixed(2)}`);
-                    return response.data;
-                } else {
-                    throw new Error(response.data?.error || 'Unknown error in Z movement');
-                }
+                this.lastPosition.z = targetZ;
+                ConsoleContext.addMessage('info', `Z movement complete. New Z: ${this.lastPosition.z.toFixed(2)}`);
+                return response.data;
             } catch (error) {
+                this.isMoving = false; // Clear moving flag on error
                 ConsoleContext.addMessage('error', `Z movement failed: ${error.message}`);
                 throw error;
             }
@@ -337,6 +417,12 @@ class Planner {
                     continue;
                 }
                 
+                // Wait for any previous movement to complete before processing the next command
+                if (this.isMoving) {
+                    ConsoleContext.addMessage('info', 'Waiting for previous movement to complete...');
+                    await this.waitForMovementCompletion();
+                }
+                
                 if (command.type === 'G0' || command.type === 'G1' || command.type === 'G01') {
                     // Linear move
                     const hasX = 'x' in command;
@@ -374,9 +460,6 @@ class Planner {
                     ConsoleContext.addMessage('warning', 'Execution aborted');
                     return false;
                 }
-                
-                // Add a small delay to avoid overwhelming the ESP32
-                await new Promise(resolve => setTimeout(resolve, 100));
             }
             
             // Final progress update
@@ -430,6 +513,7 @@ class Planner {
             // Store last known position before ESTOP
             // This will be crucial for recovery attempts
             await axios.post(`${ESP32_BASE_URL}/api/control/estop`);
+            this.isMoving = false;       // Clear the movement flag
             this.isExecuting = false;
             this.currentPlan = null;
             ConsoleContext.addMessage('warning', 'Emergency stop triggered');
