@@ -88,7 +88,7 @@ const InteractiveCalibration = () => {
     if (grblSettings && !originalSettings) {
       setOriginalSettings({...grblSettings});
     }
-  }, [grblSettings]);
+  }, [grblSettings, originalSettings]);
 
   // Start calibration process - update steps/mm to 1 and store original max rate values
   const startCalibration = async () => {
