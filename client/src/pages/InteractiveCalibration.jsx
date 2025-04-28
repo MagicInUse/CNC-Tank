@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import ConfigMenu from '../components/ConfigMenu';
 import Console from '../components/Console';
 import { ConsoleProvider } from '../context/ConsoleContext';
 import { useConsoleLog } from '../utils/ConsoleLog';
+import { GRBL_DESCRIPTIONS } from '../config/grblSettings';
 
 // Truth table data
 const microstepTable = {
@@ -51,10 +53,158 @@ const pulsePerRevTable = {
 };
 
 const InteractiveCalibration = () => {
+  // Calibration workflow states
+  const [calibrationStep, setCalibrationStep] = useState('initial'); // initial, preparing, zCalibrating, xyCalibrating, complete
   const [switches, setSwitches] = useState([false, false, false, false, false, false]);
   const [selectedAxis, setSelectedAxis] = useState('z');
+  
+  // GRBL settings management
+  const [originalSettings, setOriginalSettings] = useState(null);
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
+  const [isSettingsModified, setIsSettingsModified] = useState(false);
+  
+  // Calibration measurements
+  const [zDistance, setZDistance] = useState('');
+  const [xyDistance, setXyDistance] = useState('');
+  const [calibrationResults, setCalibrationResults] = useState({
+    z: { stepsPerMm: null, completed: false },
+    xy: { stepsPerMm: null, completed: false }
+  });
+  
   // Console log hooks
   const { logRequest, logResponse, logError } = useConsoleLog();
+
+  // Load GRBL settings when component mounts
+  useEffect(() => {
+    fetchGrblSettings();
+  }, []);
+
+  // Fetch GRBL settings
+  const fetchGrblSettings = async () => {
+    try {
+      logRequest('Fetching current GRBL settings...');
+      const response = await axios.get('http://localhost:3001/api/config/grbl');
+      setOriginalSettings(response.data.settings);
+      setIsSettingsLoaded(true);
+      logResponse('GRBL settings loaded successfully');
+      return response.data.settings;
+    } catch (error) {
+      logError(`Failed to load GRBL settings: ${error.message}`);
+      return null;
+    }
+  };
+
+  // Update a specific GRBL setting
+  const updateGrblSetting = async (key, value) => {
+    try {
+      logRequest(`Updating ${key} to value: ${value}`);
+      const response = await axios.post('http://localhost:3001/api/config/grbl', {
+        key,
+        value
+      });
+      if (response.data.status === 'success') {
+        logResponse(`Successfully updated ${key} to ${value}`);
+        return true;
+      } else {
+        logError(`Failed to update ${key}: ${response.data.error || 'Unknown error'}`);
+        return false;
+      }
+    } catch (error) {
+      logError(`Error updating ${key}: ${error.message}`);
+      return false;
+    }
+  };
+
+  // Start calibration process - update steps/mm to 1 and store original max rate values
+  const startCalibration = async () => {
+    if (!isSettingsLoaded) {
+      const settings = await fetchGrblSettings();
+      if (!settings) return false;
+    }
+
+    setCalibrationStep('preparing');
+    logRequest('Starting calibration preparation...');
+    
+    try {
+      // Store steps/mm and update them to 1
+      for (const axis of ['$100', '$101', '$102']) {
+        await updateGrblSetting(axis, 1);
+      }
+      
+      // Store max rate values and update them to 20400
+      for (const axis of ['$110', '$111', '$112']) {
+        await updateGrblSetting(axis, 20400);
+      }
+
+      logResponse('Calibration preparation complete');
+      setIsSettingsModified(true);
+      setCalibrationStep('zCalibrating');
+      return true;
+    } catch (error) {
+      logError(`Error preparing calibration: ${error.message}`);
+      return false;
+    }
+  };
+
+  // Calculate steps per mm for an axis
+  const calculateStepsPerMm = (pulses, distance) => {
+    if (!distance || isNaN(distance) || distance <= 0 || !pulses || isNaN(pulses)) {
+      return null;
+    }
+    // Formula: (pulses per revolution) / distance moved in mm
+    return pulses / distance;
+  };
+
+  // Complete calibration for an axis
+  const completeAxisCalibration = async (axis, distance) => {
+    if (!distance || isNaN(distance) || distance <= 0) {
+      logError(`Invalid distance value: ${distance}`);
+      return false;
+    }
+
+    const pulses = parseInt(pulsePerRevValue, 10);
+    if (isNaN(pulses)) {
+      logError('Invalid pulse value');
+      return false;
+    }
+
+    // Calculate steps per mm
+    const stepsPerMm = calculateStepsPerMm(pulses, parseFloat(distance));
+    if (!stepsPerMm) {
+      logError('Could not calculate steps per mm');
+      return false;
+    }
+
+    // Update calibration results
+    const updatedResults = {...calibrationResults};
+    if (axis === 'z') {
+      updatedResults.z = { stepsPerMm, completed: true };
+      
+      // Update Z steps per mm in GRBL settings
+      await updateGrblSetting('$102', stepsPerMm);
+      // Restore Z max rate
+      await updateGrblSetting('$112', originalSettings['$112'].value);
+      
+      setCalibrationStep('xyCalibrating');
+    } else {
+      updatedResults.xy = { stepsPerMm, completed: true };
+      
+      // Update X and Y steps per mm in GRBL settings
+      await updateGrblSetting('$100', stepsPerMm);
+      await updateGrblSetting('$101', stepsPerMm);
+      // Restore X and Y max rate
+      await updateGrblSetting('$110', originalSettings['$110'].value);
+      await updateGrblSetting('$111', originalSettings['$111'].value);
+      
+      if (updatedResults.z.completed) {
+        setCalibrationStep('complete');
+      }
+    }
+    
+    setCalibrationResults(updatedResults);
+    logResponse(`${axis.toUpperCase()} axis calibration complete. Steps/mm: ${stepsPerMm}`);
+    return true;
+  };
 
   const toggleSwitch = (index) => {
     const newSwitches = [...switches];
@@ -159,84 +309,253 @@ const InteractiveCalibration = () => {
       <Console />
       <ConfigMenu />
       <div className="dip-switch-container">
-        <h1 className="title">Interactive Calibration.</h1>
-        <p> Please set X, Y, Z steps/mm to 1 in GRBL settings. These will be changed after calibration. Please allow 20400 as Max Rate for X, Y, Z. Then return them to base speed. </p>
-
-        {/* Axis selection */}
-        <div className="axis-selection">
-          <div
-            className={`axis-button ${selectedAxis === 'z' ? 'active' : ''}`}
-            onClick={() => setSelectedAxis('z')}
-          >
-            Z Axis
+        <h1 className="title">Interactive Calibration</h1>
+        
+        {calibrationStep === 'initial' && (
+          <div className="calibration-confirmation">
+            <p>Welcome to the interactive calibration process. This will help you calibrate the steps per millimeter for your CNC Tank's axes.</p>
+            <p>The calibration process will:</p>
+            <ol>
+              <li>Set X, Y, and Z steps/mm to 1</li>
+              <li>Store your current maximum rate values</li>
+              <li>Temporarily set maximum rates to 20400</li>
+              <li>Guide you through calibrating the Z axis</li>
+              <li>Guide you through calibrating the X/Y axes</li>
+              <li>Restore your original maximum rate values</li>
+            </ol>
+            <p>Ready to begin calibration?</p>
+            <button 
+              className="calibration-button festive"
+              onClick={startCalibration}
+              disabled={!isSettingsLoaded}
+            >
+              Start Calibration
+            </button>
+            {!isSettingsLoaded && (
+              <p className="loading-message">Loading GRBL settings...</p>
+            )}
           </div>
-          <div
-            className={`axis-button ${selectedAxis === 'xy' ? 'active' : ''}`}
-            onClick={() => setSelectedAxis('xy')}
-          >
-            X/Y Axis
+        )}
+        
+        {calibrationStep === 'preparing' && (
+          <div className="calibration-preparing">
+            <h2>Preparing for Calibration</h2>
+            <p>Configuring GRBL settings for calibration...</p>
+            <div className="throbber"></div>
           </div>
-        </div>
-
-        <div className="dip-switch-box">
-          {/* Switch labels (1 to 6) */}
-          <div className="switch-labels">
-            {switches.map((_, index) => (
-              <span key={index} className="label">
-                {index + 1}
-              </span>
-            ))}
-          </div>
-
-          {/* DIP switches */}
-          <div className="switches">
-            {switches.map((isOn, index) => (
+        )}
+        
+        {(calibrationStep === 'zCalibrating' || calibrationStep === 'xyCalibrating') && (
+          <>
+            <h2>
+              {calibrationStep === 'zCalibrating' ? 'Z-Axis Calibration' : 'X/Y-Axis Calibration'}
+            </h2>
+            <p>
+              {calibrationStep === 'zCalibrating' 
+                ? 'Set the DIP switches for your Z-axis stepper driver, then use the Go! button to move the Z axis by one full rotation.'
+                : 'Set the DIP switches for your X/Y-axis stepper drivers, then use the Go! button to move the tank forward by one full rotation.'
+              }
+            </p>
+            <p>After movement completes, measure the traveled distance in millimeters and enter it below.</p>
+            
+            {/* Axis selection */}
+            <div className="axis-selection">
               <div
-                key={index}
-                className={`switch ${isOn ? 'on' : 'off'}`}
-                onClick={() => toggleSwitch(index)}
+                className={`axis-button ${calibrationStep === 'zCalibrating' ? 'active' : 'disabled'}`}
+                onClick={() => calibrationStep === 'xyCalibrating' && (calibrationResults.z.completed && setCalibrationStep('zCalibrating'))}
               >
-                {isOn ? 'ON' : 'OFF'}
+                Z Axis {calibrationResults.z.completed && '✓'}
               </div>
-            ))}
-          </div>
+              <div
+                className={`axis-button ${calibrationStep === 'xyCalibrating' ? 'active' : 'disabled'}`}
+                onClick={() => calibrationStep === 'zCalibrating' && setCalibrationStep('xyCalibrating')}
+              >
+                X/Y Axis {calibrationResults.xy.completed && '✓'}
+              </div>
+            </div>
 
-          {/* ON and DIP labels */}
-          <div className="on-dip-labels">
-            <span className="on-label">ON</span>
-            <span className="dip-label">DIP</span>
-          </div>
-        </div>
+            <div className="dip-switch-box">
+              {/* Switch labels (1 to 6) */}
+              <div className="switch-labels">
+                {switches.map((_, index) => (
+                  <span key={index} className="label">
+                    {index + 1}
+                  </span>
+                ))}
+              </div>
 
-        {/* Display microstep, pulse/rev, peak current, and operating current values */}
-        <div className="calibration-values">
-          <div className="value">
-            <strong>Microstep:</strong> {microstepValue}
-          </div>
-          <div className="value">
-            <strong>Pulse/Rev:</strong> {pulsePerRevValue}
-          </div>
-          <div className="value">
-            <strong>Peak Current:</strong> {peakCurrentValue}
-          </div>
-          <div className="value">
-            <strong>Operating Current:</strong> {operatingCurrentValue}
-          </div>
-        </div>
+              {/* DIP switches */}
+              <div className="switches">
+                {switches.map((isOn, index) => (
+                  <div
+                    key={index}
+                    className={`switch ${isOn ? 'on' : 'off'}`}
+                    onClick={() => toggleSwitch(index)}
+                  >
+                    {isOn ? 'ON' : 'OFF'}
+                  </div>
+                ))}
+              </div>
 
-        {/* Go Button */}
-        <div className="go-button-container">
-          <button 
-            className="go-button festive" 
-            onClick={handleGoClick} 
-            disabled={isGoDisabled} // Disable the button if settings are invalid
-          >
-             Go! 
-          </button>
-          {isGoDisabled && (
-            <p className="error-message">Please select valid DIP switch settings before proceeding.</p>
-          )}
-        </div>
+              {/* ON and DIP labels */}
+              <div className="on-dip-labels">
+                <span className="on-label">ON</span>
+                <span className="dip-label">DIP</span>
+              </div>
+            </div>
+
+            {/* Display microstep, pulse/rev, peak current, and operating current values */}
+            <div className="calibration-values">
+              <div className="value">
+                <strong>Microstep:</strong> {microstepValue}
+              </div>
+              <div className="value">
+                <strong>Pulse/Rev:</strong> {pulsePerRevValue}
+              </div>
+              <div className="value">
+                <strong>Peak Current:</strong> {peakCurrentValue}
+              </div>
+              <div className="value">
+                <strong>Operating Current:</strong> {operatingCurrentValue}
+              </div>
+            </div>
+
+            {/* Go Button and Distance Input */}
+            <div className="calibration-controls">
+              <div className="go-button-container">
+                <button 
+                  className="go-button festive" 
+                  onClick={() => {
+                    if (calibrationStep === 'zCalibrating') {
+                      handleZCommand('down');
+                    } else {
+                      handleDirectionalMove('forward');
+                    }
+                  }} 
+                  disabled={isGoDisabled}
+                >
+                  Go! 
+                </button>
+              </div>
+              
+              <div className="distance-input">
+                <label>
+                  Measured distance (mm):
+                  <input 
+                    type="number" 
+                    value={calibrationStep === 'zCalibrating' ? zDistance : xyDistance} 
+                    onChange={(e) => {
+                      if (calibrationStep === 'zCalibrating') {
+                        setZDistance(e.target.value);
+                      } else {
+                        setXyDistance(e.target.value);
+                      }
+                    }}
+                    min="0.1"
+                    step="0.1"
+                  />
+                </label>
+                <button 
+                  className="calculate-button"
+                  onClick={() => {
+                    if (calibrationStep === 'zCalibrating') {
+                      completeAxisCalibration('z', zDistance);
+                    } else {
+                      completeAxisCalibration('xy', xyDistance);
+                    }
+                  }}
+                  disabled={
+                    (calibrationStep === 'zCalibrating' && (!zDistance || parseFloat(zDistance) <= 0)) ||
+                    (calibrationStep === 'xyCalibrating' && (!xyDistance || parseFloat(xyDistance) <= 0))
+                  }
+                >
+                  Calculate & Save
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+        
+        {calibrationStep === 'complete' && (
+          <div className="calibration-complete">
+            <h2>🎉 Calibration Complete!</h2>
+            <div className="calibration-results">
+              <h3>Results:</h3>
+              <div className="result-item">
+                <strong>Z Axis Steps/mm:</strong> {calibrationResults.z.stepsPerMm.toFixed(4)}
+              </div>
+              <div className="result-item">
+                <strong>X/Y Axis Steps/mm:</strong> {calibrationResults.xy.stepsPerMm.toFixed(4)}
+              </div>
+            </div>
+            <p>Your GRBL settings have been updated with the new steps/mm values, and the original maximum rates have been restored.</p>
+            <div className="navigation-buttons">
+              <button 
+                className="nav-button"
+                onClick={() => window.location.href = '/dashboard'}
+              >
+                Go to Dashboard
+              </button>
+              <button 
+                className="nav-button"
+                onClick={() => setCalibrationStep('initial')}
+              >
+                Recalibrate
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {calibrationStep === 'initial' && (
+          <>
+            <p><strong>Configure your DIP switches here to see their values.</strong></p>
+            <div className="dip-switch-box">
+              {/* Switch labels (1 to 6) */}
+              <div className="switch-labels">
+                {switches.map((_, index) => (
+                  <span key={index} className="label">
+                    {index + 1}
+                  </span>
+                ))}
+              </div>
+
+              {/* DIP switches */}
+              <div className="switches">
+                {switches.map((isOn, index) => (
+                  <div
+                    key={index}
+                    className={`switch ${isOn ? 'on' : 'off'}`}
+                    onClick={() => toggleSwitch(index)}
+                  >
+                    {isOn ? 'ON' : 'OFF'}
+                  </div>
+                ))}
+              </div>
+
+              {/* ON and DIP labels */}
+              <div className="on-dip-labels">
+                <span className="on-label">ON</span>
+                <span className="dip-label">DIP</span>
+              </div>
+            </div>
+
+            {/* Display microstep, pulse/rev, peak current, and operating current values */}
+            <div className="calibration-values">
+              <div className="value">
+                <strong>Microstep:</strong> {microstepValue}
+              </div>
+              <div className="value">
+                <strong>Pulse/Rev:</strong> {pulsePerRevValue}
+              </div>
+              <div className="value">
+                <strong>Peak Current:</strong> {peakCurrentValue}
+              </div>
+              <div className="value">
+                <strong>Operating Current:</strong> {operatingCurrentValue}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </ConsoleProvider>
   );
