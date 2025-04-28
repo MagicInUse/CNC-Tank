@@ -1,27 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useMachine } from '../context/MachineContext';
-// import { useConsoleLog } from '../utils/ConsoleLog';
+import { useConsoleLog } from '../utils/ConsoleLog';
 
 const LocationCoordinates = () => {
-    const { position, setPosition, stockSize, setStockSize } = useMachine();
-    // const { logResponse, logError } = useConsoleLog();
+    const { position, setPosition, stockSize, setStockSize, status } = useMachine();
+    const { logResponse, logError } = useConsoleLog();
 
-    // Initialize tempStockSize without logging during render
+    // Initialize tempStockSize
     const [tempStockSize, setTempStockSize] = useState({
         w: stockSize.w,
         l: stockSize.l,
         t: stockSize.t
     });
 
-    // Log initial values after mount
-    useEffect(() => {
-        // logResponse(`LocationCoordinates initialized with tempStockSize: ${JSON.stringify(tempStockSize)}`);
-    }, []);
-
     // Sync tempStockSize when stockSize changes
     useEffect(() => {
         setTempStockSize(stockSize);
-        // logResponse(`stockSize sync - new values: ${JSON.stringify(stockSize)}`);
     }, [stockSize]);
 
     const handleStockSizeChange = (axis, value) => {
@@ -33,25 +27,14 @@ const LocationCoordinates = () => {
                 ...prev,
                 [axis]: newValue
             };
-            // Promise.resolve().then(() => {
-            //     logResponse(`tempStockSize updated: ${JSON.stringify(newState)}`);
-            // });
             return newState;
         });
     };
 
     const handleStockSizeBlur = (axis) => {
-        // Promise.resolve().then(() => {
-        //     logResponse(`handleStockSizeBlur - axis: ${axis}`);
-        //     logResponse(`current values - temp: ${JSON.stringify(tempStockSize)}, stock: ${JSON.stringify(stockSize)}`);
-        // });
-
         const currentValue = Number(tempStockSize[axis]);
 
         if (isNaN(currentValue)) {
-            // Promise.resolve().then(() => {
-            //     logError(`Invalid value for ${axis}, using fallback: ${stockSize[axis]}`);
-            // });
             setTempStockSize(prev => ({
                 ...prev,
                 [axis]: stockSize[axis]
@@ -66,25 +49,38 @@ const LocationCoordinates = () => {
 
         setStockSize(newStockSize);
         setTempStockSize(newStockSize);
-
-        // Promise.resolve().then(() => {
-        //     logResponse(`Stock size updated - axis: ${axis}, value: ${currentValue}`);
-        // });
     };
 
+    // Fetch real position data from the server
     useEffect(() => {
-        const updateCoordinates = () => {
-            setPosition({ 
-                x: (Math.random() * 2690).toFixed(2), 
-                y: (Math.random() * 2690).toFixed(2), 
-                z: (Math.random() * 80).toFixed(2),
-                theta: (Math.random() * 360).toFixed(2)
-            });
+        // Only fetch position if connected to the machine
+        if (status !== 'connected') {
+            return;
+        }
+
+        const fetchPosition = async () => {
+            try {
+                const response = await fetch('http://localhost:3001/api/status/position');
+                if (response.ok) {
+                    const positionData = await response.json();
+                    setPosition(positionData);
+                } else {
+                    logError('Failed to fetch position data');
+                }
+            } catch (error) {
+                logError(`Error fetching position: ${error.message}`);
+            }
         };
 
-        const interval = setInterval(updateCoordinates, 3000);
+        // Fetch position initially
+        // fetchPosition();
+
+        // Set up interval to fetch position regularly
+        const interval = setInterval(fetchPosition, 5000);
+        
+        // Clean up interval on unmount
         return () => clearInterval(interval);
-    }, [setPosition]);
+    }, [setPosition, status, logError]);
 
     return (
         <div className="flex-block flex-column w-36 absolute z-10 bottom-10 left-10 border border-gray-400 bg-gray-950 bg-opacity-50 rounded-xl shadow-xl p-4 space-y-1 text-left">

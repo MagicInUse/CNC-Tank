@@ -686,12 +686,12 @@ void handleSpindleZDepth() {
     
     int speed = doc["speed"];
     int step = doc["step"];
-    if (speed == 0 ||
-        step == 0) {
+    
+    if (speed == 0 || step == 0) {
         server.send(400, "application/json", "{\"error\": \"Missing keys\"}");
         return;
     }
-    //To-DO Use new stepper control function to accept commands from console.
+    
     //Enforce soft limits if enabled.
     if(softLimits){
       if((step * zStepsPerMM) > (zMaxTravel * zStepsPerMM)){
@@ -714,12 +714,8 @@ void handleSpindleZDepth() {
     //Run the stepper control function.
     stepperController(0, 0, step, 0, 0, speed);
 
-    sendConsoleMessage("info", "Step=" + String(step) + 
-                              ", Speed=" + String(speed));
-
     StaticJsonDocument<200> response;
     response["status"] = "success";
-    response["command"] = doc["command"];
     
     String responseStr;
     serializeJson(response, responseStr);
