@@ -925,7 +925,8 @@ void setup() {
     }
     Serial.println("Connected!");
 
-    // Initialize mDNS
+    //TO-Do: Remove mDNS?
+    //Initialize mDNS
     if (MDNS.begin(host)) {
         Serial.println("mDNS responder started");
     }
